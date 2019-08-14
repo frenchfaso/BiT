@@ -4,6 +4,7 @@ import { Map } from "./map.js";
 
 class Engine {
     constructor() {
+        this.updateRotation = this.updateRotation.bind(this);
         this.rayCaster = new RayCaster();
         this.player = new Player();
         this.map = new Map().map;
@@ -12,9 +13,30 @@ class Engine {
         this.canv.height = window.innerHeight;
         this.canv.style.width = "100%";
         this.canv.style.imageRendering = "pixelated";
-        this.canv.addEventListener("touchend", this.touchEnd);
-        this.canv.addEventListener("touchmove", this.touchMove, { passive: false });
-        this.canv.addEventListener("touchstart", this.touchStart, { passive: false });
+        this.canv.addEventListener("touchend", (e) => {
+            this.touched = false;
+            this.oldTouchDX = 0;
+            this.oldTouchDY = 0;
+            this.touchDX = 0;
+            this.touchDY = 0;
+            this.player.rot = 0;
+            this.player.forward = false;
+            this.player.backward = false;
+        });
+        this.canv.addEventListener("touchmove", (e) => {
+            if (this.touched) {
+                this.touchDX = (this.oldTouchDX - e.touches[0].clientX) * -0.1;
+                this.touchDY = this.oldTouchDY - e.touches[0].clientY;
+                if (this.touchDY != 0) {
+                    this.player.forward = true;
+                }
+            }
+        }, { passive: false });
+        this.canv.addEventListener("touchstart", (e) => {
+            this.touched = true;
+            this.oldTouchDX = e.touches[0].clientX;
+            this.oldTouchDY = e.touches[0].clientY;
+        }, { passive: false });
         document.body.appendChild(this.canv);
         this.canv.onclick = () => {
             this.canv.requestPointerLock();
@@ -78,6 +100,9 @@ class Engine {
                     break;
             }
         }, false);
+    }
+    updateRotation(e) {
+        this.player.rot = e.movementX;
     }
     update(tFrame) {
         const frameTime = (tFrame - this.oldTime) / 1000;
@@ -154,36 +179,6 @@ class Engine {
             this.ctx.lineTo(x + 0.5, stripe.end);
             this.ctx.stroke();
         }
-    }
-
-    // Eventhandlers
-
-    updateRotation = (e) => {
-        this.player.rot = e.movementX;
-    }
-    touchStart = (e) => {
-        this.touched = true;
-        this.oldTouchDX = e.touches[0].clientX;
-        this.oldTouchDY = e.touches[0].clientY;
-    }
-    touchMove = (e) => {
-        if (this.touched) {
-            this.touchDX = (this.oldTouchDX - e.touches[0].clientX) * -0.1;
-            this.touchDY = this.oldTouchDY - e.touches[0].clientY;
-            if (this.touchDY != 0) {
-                this.player.forward = true;
-            }
-        }
-    }
-    touchEnd = (e) => {
-        this.touched = false;
-        this.oldTouchDX = 0;
-        this.oldTouchDY = 0;
-        this.touchDX = 0;
-        this.touchDY = 0;
-        this.player.rot = 0;
-        this.player.forward = false;
-        this.player.backward = false;
     }
 }
 
