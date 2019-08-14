@@ -1,35 +1,12 @@
 import { RayCaster } from "./raycaster.js";
 import { Player } from "./player.js";
+import { Map } from "./map.js";
 
 class Engine {
     constructor() {
-        this.stripes = []
-        this.map = [
-            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 0, 0, 0, 0, 3, 0, 3, 0, 3, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 2, 2, 0, 2, 2, 0, 0, 0, 0, 3, 0, 3, 0, 3, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 4, 4, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 4, 0, 4, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 4, 0, 0, 0, 0, 5, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 4, 0, 4, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 4, 0, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 4, 4, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-        ]
+        this.rayCaster = new RayCaster();
+        this.player = new Player();
+        this.map = new Map().map;
         this.canv = document.createElement("canvas");
         this.canv.width = window.innerWidth;
         this.canv.height = window.innerHeight;
@@ -45,8 +22,6 @@ class Engine {
         this.mouseLocked = false;
         this.ctx = this.canv.getContext("2d", { alpha: false });
         this.ctx.lineWidth = 1;
-        this.player = new Player();
-        this.rayCaster = new RayCaster();
         this.oldTime = 0;
         this.oldRot = 0;
         this.touched = false;
@@ -126,7 +101,6 @@ class Engine {
             this.player.planeX = this.player.planeX * Math.cos(rotSpeed) - this.player.planeY * Math.sin(rotSpeed);
             this.player.planeY = oldPlaneX * Math.sin(rotSpeed) + this.player.planeY * Math.cos(rotSpeed);
         }
-
         if (this.player.forward) {
             const x1 = Math.floor(this.player.posX + this.player.dirX * this.movSpeed * this.player.collision);
             const y1 = Math.floor(this.player.posY);
@@ -166,20 +140,18 @@ class Engine {
         this.oldTime = tFrame;
     }
     render() {
-        for (let x = 0; x < this.canv.width; x += 1) {
-            this.stripes[x] = this.rayCaster.CastRay(x, this.map, this.player, this.canv);
-        }
         //this.ctx.clearRect(0, 0, this.canv.width, this.canv.height);
         this.ctx.fillStyle = "#777777";
         this.ctx.fillRect(0, 0, this.canv.width, this.canv.height / 2);
         this.ctx.fillStyle = "#bbbbbb";
         this.ctx.fillRect(0, this.canv.height / 2, this.canv.width, this.canv.height);
+
         for (let x = 0; x < this.canv.width; x += 1) {
-            // for (let stripe of this.stripes) {
-            this.ctx.strokeStyle = this.stripes[x].color;
+            let stripe = this.rayCaster.CastRay(x, this.map, this.player, this.canv);
+            this.ctx.strokeStyle = stripe.color;
             this.ctx.beginPath();
-            this.ctx.moveTo(x + 0.5, this.stripes[x].start);
-            this.ctx.lineTo(x + 0.5, this.stripes[x].end);
+            this.ctx.moveTo(x + 0.5, stripe.start);
+            this.ctx.lineTo(x + 0.5, stripe.end);
             this.ctx.stroke();
         }
     }

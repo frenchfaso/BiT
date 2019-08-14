@@ -105,7 +105,6 @@ class RayCaster {
                 break;
         }
         return {
-            //x: x,
             start: this.drawStart,
             end: this.drawEnd,
             color: this.color
