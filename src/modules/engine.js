@@ -5,13 +5,13 @@ import { Map } from "./map.js";
 class Engine {
     constructor() {
         this.updateRotation = this.updateRotation.bind(this);
+
         this.rayCaster = new RayCaster();
         this.player = new Player();
         this.map = new Map().map;
         this.canv = document.createElement("canvas");
         this.canv.width = window.innerWidth;
         this.canv.height = window.innerHeight;
-        this.canv.style.width = "100%";
         this.canv.style.imageRendering = "pixelated";
         this.canv.addEventListener("touchend", (e) => {
             this.touched = false;
@@ -38,9 +38,9 @@ class Engine {
             this.oldTouchDY = e.touches[0].clientY;
         }, { passive: false });
         document.body.appendChild(this.canv);
-        this.canv.onclick = () => {
+        this.canv.addEventListener("click", () => {
             this.canv.requestPointerLock();
-        }
+        });
         this.mouseLocked = false;
         this.ctx = this.canv.getContext("2d", { alpha: false });
         this.ctx.lineWidth = 1;
@@ -100,6 +100,16 @@ class Engine {
                     break;
             }
         }, false);
+        const fullscreenButton = document.getElementById("fullscreen");
+        fullscreenButton.addEventListener("click", (e) => {
+            if (this.canv.requestFullscreen) {
+                this.canv.requestFullscreen();
+            }
+        });
+        window.addEventListener("resize", () => {
+            this.canv.width = window.innerWidth;
+            this.canv.height = window.innerHeight;
+        });
     }
     updateRotation(e) {
         this.player.rot = e.movementX;

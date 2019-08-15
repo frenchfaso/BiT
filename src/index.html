@@ -10,11 +10,36 @@
       overflow: hidden;
       overscroll-behavior-y: contain;
     }
+
+    #fullscreen {
+      position: absolute;
+      top: 10pt;
+      right: 10pt;
+      border-radius: 50%;
+      width: 35pt;
+      height: 35pt;
+      color: dimgray;
+      background-color: white;
+      opacity: 0.5;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 17pt;
+      font-weight: bold;
+      user-select: none;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    #fullscreen-icon{
+      margin-top: -4pt;
+    }
   </style>
 </head>
 
 <body>
   <script type="module" src="./app.js"></script>
+  <div id="fullscreen">
+    <span id="fullscreen-icon">[ ]</span>
+  </div>
 </body>
 
 </html>
