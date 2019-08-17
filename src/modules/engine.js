@@ -114,7 +114,7 @@ class Engine {
         });
     }
     async init() {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
             this.textureAtlas.addEventListener("load", async (e) => {
                 for (let t = 0; t < 9; t++) {
                     const x = t % 3 * 64;
@@ -200,7 +200,7 @@ class Engine {
         // draw textured walls
         for (let x = 0; x < this.canv.width; x += 1) {
             let stripe = this.rayCaster.CastRay(x, 64, this.map, this.player, this.canv);
-            this.ctx.drawImage(this.textures[stripe.texNum], stripe.texX, 0, 1, 64, x, stripe.end, 1, stripe.start - stripe.end);
+            this.ctx.drawImage(this.textures[stripe.texNum], stripe.texX, stripe.texY, 1, 64-stripe.texY*2, x, stripe.end, 1, stripe.start - stripe.end);
         }
     }
 }

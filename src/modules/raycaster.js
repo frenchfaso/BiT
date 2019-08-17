@@ -17,7 +17,6 @@ class RayCaster {
         this.lineHeight;
         this.drawStart;
         this.drawEnd;
-        this.color;
     }
     CastRay(x, texWidth, map, player, canv) {
         this.hit = 0;
@@ -82,33 +81,6 @@ class RayCaster {
         this.drawEnd = Math.floor(this.lineHeight / 2 + canv.height / 2);
         if (this.drawEnd >= canv.height) this.drawEnd = canv.height - 1;
 
-        // switch (map[this.mapX][this.mapY]) {
-        //     case 1:
-        //         if (this.side == 0) this.color = "#880000";
-        //         else this.color = "#FF7777";
-        //         break;
-        //     case 2:
-        //         if (this.side == 0) this.color = "#0000AA";
-        //         else this.color = "#0088FF";
-        //         break;
-        //     case 3:
-        //         if (this.side == 0) this.color = "#00CC55";
-        //         else this.color = "#AAFF66";
-        //         break;
-        //     case 4:
-        //         if (this.side == 0) this.color = "#664400";
-        //         else this.color = "#DD8855";
-        //         break;
-        //     case 5:
-        //         if (this.side == 0) this.color = "#333333";
-        //         else this.color = "#000000";
-        //         break;
-        //     default:
-        //         if (this.side == 0) this.color = "#CC44CC";
-        //         else this.color = "rgb(202, 120, 202)";
-        //         break;
-        // }
-
         //texturing calculations
         const texNum = map[this.mapX][this.mapY] - 1;
         let wallX;
@@ -122,12 +94,16 @@ class RayCaster {
         let texX = Math.floor(wallX * texWidth);
         if (this.side == 0 && this.rayDirX > 0) texX = texWidth - texX - 1;
         if (this.side == 1 && this.rayDirY < 0) texX = texWidth - texX - 1;
+        let d = this.drawStart * 256 - canv.height * 128 + this.lineHeight * 128;
+        let texY = d * texWidth / this.lineHeight / 256;
+
         return {
             texNum: texNum,
             texX: texX,
+            texY: texY,
             start: this.drawStart,
             end: this.drawEnd,
-            color: this.color
+            side: this.side
         }
     }
 }
