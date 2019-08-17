@@ -117,7 +117,10 @@ class Engine {
     async init() {
         return new Promise((resolve) => {
             this.textureAtlas.addEventListener("load", async (e) => {
-                const offCanv = new OffscreenCanvas(64, 64);
+                // const offCanv = new OffscreenCanvas(64, 64);
+                const offCanv = document.createElement("canvas");
+                offCanv.width = 64;
+                offCanv.height = 64;
                 const ctx = offCanv.getContext("2d");
                 for (let t = 0; t < 9; t++) {
                     const x = t % 3 * 64;
@@ -126,7 +129,7 @@ class Engine {
                     ctx.drawImage(this.textures[t], 0, 0, this.textures[t].width, this.textures[t].height);
                     ctx.fillStyle = "rgba(0,0,0,0.35)";
                     ctx.fillRect(0, 0, offCanv.width, offCanv.height);
-                    this.textures[t + 9] = offCanv.transferToImageBitmap();
+                    this.textures[t + 9] = await createImageBitmap(offCanv);
                 }
                 resolve();
             });
