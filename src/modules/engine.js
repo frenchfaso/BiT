@@ -6,6 +6,7 @@ class Engine {
     constructor() {
         this.updateRotation = this.updateRotation.bind(this);
 
+        this.res = 2;
         this.rayCaster = new RayCaster();
         this.player = new Player();
         this.map = new Map().map;
@@ -198,9 +199,13 @@ class Engine {
         this.ctx.fillRect(0, this.canv.height / 2, this.canv.width, this.canv.height);
 
         // draw textured walls
-        for (let x = 0; x < this.canv.width; x += 1) {
+        for (let x = 0; x < this.canv.width; x += this.res) {
             let stripe = this.rayCaster.CastRay(x, 64, this.map, this.player, this.canv);
-            this.ctx.drawImage(this.textures[stripe.texNum], stripe.texX, stripe.texY, 1, 64-stripe.texY*2, x, stripe.end, 1, stripe.start - stripe.end);
+            this.ctx.drawImage(this.textures[stripe.texNum], stripe.texX, stripe.texY, 1, 64-stripe.texY*2, x, stripe.end, this.res, stripe.start - stripe.end);
+            if(stripe.side == 0){
+                this.ctx.fillStyle = "rgba(0,0,0,0.35)";
+                this.ctx.fillRect(x, stripe.end, this.res, stripe.start - stripe.end);
+            }
         }
     }
 }
