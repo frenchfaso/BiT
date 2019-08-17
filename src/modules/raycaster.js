@@ -19,7 +19,7 @@ class RayCaster {
         this.drawEnd;
         this.color;
     }
-    CastRay(x, map, player, canv) {
+    CastRay(x, texWidth, map, player, canv) {
         this.hit = 0;
         //calculate ray position and direction
         this.cameraX = 2 * x / canv.width - 1; //x-coordinate in camera space
@@ -82,29 +82,49 @@ class RayCaster {
         this.drawEnd = Math.floor(this.lineHeight / 2 + canv.height / 2);
         if (this.drawEnd >= canv.height) this.drawEnd = canv.height - 1;
 
-        switch (map[this.mapX][this.mapY]) {
-            case 1:
-                if (this.side == 0) this.color = "#880000";
-                else this.color = "#FF7777";
-                break;
-            case 2:
-                if (this.side == 0) this.color = "#0000AA";
-                else this.color = "#0088FF";
-                break;
-            case 3:
-                if (this.side == 0) this.color = "#00CC55";
-                else this.color = "#AAFF66";
-                break;
-            case 4:
-                if (this.side == 0) this.color = "#664400";
-                else this.color = "#DD8855";
-                break;
-            case 5:
-                if (this.side == 0) this.color = "#333333";
-                else this.color = "#000000";
-                break;
+        // switch (map[this.mapX][this.mapY]) {
+        //     case 1:
+        //         if (this.side == 0) this.color = "#880000";
+        //         else this.color = "#FF7777";
+        //         break;
+        //     case 2:
+        //         if (this.side == 0) this.color = "#0000AA";
+        //         else this.color = "#0088FF";
+        //         break;
+        //     case 3:
+        //         if (this.side == 0) this.color = "#00CC55";
+        //         else this.color = "#AAFF66";
+        //         break;
+        //     case 4:
+        //         if (this.side == 0) this.color = "#664400";
+        //         else this.color = "#DD8855";
+        //         break;
+        //     case 5:
+        //         if (this.side == 0) this.color = "#333333";
+        //         else this.color = "#000000";
+        //         break;
+        //     default:
+        //         if (this.side == 0) this.color = "#CC44CC";
+        //         else this.color = "rgb(202, 120, 202)";
+        //         break;
+        // }
+
+        //texturing calculations
+        const texNum = map[this.mapX][this.mapY] - 1;
+        let wallX;
+        if (this.side == 0) {
+            wallX = player.posY + this.perpWallDist * this.rayDirY;
         }
+        else {
+            wallX = player.posX + this.perpWallDist * this.rayDirX;
+        }
+        wallX -= Math.floor(wallX);
+        let texX = Math.floor(wallX * texWidth);
+        if (this.side == 0 && this.rayDirX > 0) texX = texWidth - texX - 1;
+        if (this.side == 1 && this.rayDirY < 0) texX = texWidth - texX - 1;
         return {
+            texNum: texNum,
+            texX: texX,
             start: this.drawStart,
             end: this.drawEnd,
             color: this.color

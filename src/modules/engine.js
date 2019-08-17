@@ -9,6 +9,8 @@ class Engine {
         this.rayCaster = new RayCaster();
         this.player = new Player();
         this.map = new Map().map;
+        this.textures = [];
+        this.textureAtlas = new Image();
         this.canv = document.createElement("canvas");
         this.canv.width = window.innerWidth;
         this.canv.height = window.innerHeight;
@@ -43,6 +45,7 @@ class Engine {
         });
         this.mouseLocked = false;
         this.ctx = this.canv.getContext("2d", { alpha: false });
+        this.ctx.imageSmoothingEnabled = false;
         this.ctx.lineWidth = 1;
         this.oldTime = 0;
         this.oldRot = 0;
@@ -55,10 +58,8 @@ class Engine {
         this.superSpeed = 1;
         document.addEventListener('pointerlockchange', () => {
             if (document.pointerLockElement == this.canv) {
-                console.log('The pointer lock status is now locked');
                 document.addEventListener("mousemove", this.updateRotation, false);
             } else {
-                console.log('The pointer lock status is now unlocked');
                 document.removeEventListener("mousemove", this.updateRotation, false);
             }
         }, false);
@@ -109,12 +110,27 @@ class Engine {
         window.addEventListener("resize", () => {
             this.canv.width = window.innerWidth;
             this.canv.height = window.innerHeight;
+            this.ctx.imageSmoothingEnabled = false;
+        });
+    }
+    async init() {
+        return new Promise((resolve, reject) => {
+            this.textureAtlas.addEventListener("load", async (e) => {
+                for (let t = 0; t < 9; t++) {
+                    const x = t % 3 * 64;
+                    const y = Math.floor(t / 3) * 64;
+                    this.textures[t] = await createImageBitmap(this.textureAtlas, x, y, 64, 64);
+                }
+                resolve();
+            });
+            this.textureAtlas.src = "./textures.webp";
         });
     }
     updateRotation(e) {
         this.player.rot = e.movementX;
     }
     update(tFrame) {
+        // update player position
         const frameTime = (tFrame - this.oldTime) / 1000;
         this.movSpeed = frameTime * 3 * this.superSpeed;
 
@@ -175,19 +191,16 @@ class Engine {
         this.oldTime = tFrame;
     }
     render() {
-        //this.ctx.clearRect(0, 0, this.canv.width, this.canv.height);
+        // draw floor and ceiling
         this.ctx.fillStyle = "#777777";
         this.ctx.fillRect(0, 0, this.canv.width, this.canv.height / 2);
         this.ctx.fillStyle = "#bbbbbb";
         this.ctx.fillRect(0, this.canv.height / 2, this.canv.width, this.canv.height);
 
+        // draw textured walls
         for (let x = 0; x < this.canv.width; x += 1) {
-            let stripe = this.rayCaster.CastRay(x, this.map, this.player, this.canv);
-            this.ctx.strokeStyle = stripe.color;
-            this.ctx.beginPath();
-            this.ctx.moveTo(x + 0.5, stripe.start);
-            this.ctx.lineTo(x + 0.5, stripe.end);
-            this.ctx.stroke();
+            let stripe = this.rayCaster.CastRay(x, 64, this.map, this.player, this.canv);
+            this.ctx.drawImage(this.textures[stripe.texNum], stripe.texX, 0, 1, 64, x, stripe.end, 1, stripe.start - stripe.end);
         }
     }
 }
