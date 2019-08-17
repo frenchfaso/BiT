@@ -117,10 +117,16 @@ class Engine {
     async init() {
         return new Promise((resolve) => {
             this.textureAtlas.addEventListener("load", async (e) => {
+                const offCanv = new OffscreenCanvas(64, 64);
+                const ctx = offCanv.getContext("2d");
                 for (let t = 0; t < 9; t++) {
                     const x = t % 3 * 64;
                     const y = Math.floor(t / 3) * 64;
                     this.textures[t] = await createImageBitmap(this.textureAtlas, x, y, 64, 64);
+                    ctx.drawImage(this.textures[t], 0, 0, this.textures[t].width, this.textures[t].height);
+                    ctx.fillStyle = "rgba(0,0,0,0.35)";
+                    ctx.fillRect(0, 0, offCanv.width, offCanv.height);
+                    this.textures[t + 9] = offCanv.transferToImageBitmap();
                 }
                 resolve();
             });
@@ -198,13 +204,14 @@ class Engine {
         this.ctx.fillStyle = "#bbbbbb";
         this.ctx.fillRect(0, this.canv.height / 2, this.canv.width, this.canv.height);
 
-        // draw textured walls
+        // draw textured walls with simple lighting
         for (let x = 0; x < this.canv.width; x += this.res) {
             let stripe = this.rayCaster.CastRay(x, 64, this.map, this.player, this.canv);
-            this.ctx.drawImage(this.textures[stripe.texNum], stripe.texX, stripe.texY, 1, 64-stripe.texY*2, x, stripe.end, this.res, stripe.start - stripe.end);
-            if(stripe.side == 0){
-                this.ctx.fillStyle = "rgba(0,0,0,0.35)";
-                this.ctx.fillRect(x, stripe.end, this.res, stripe.start - stripe.end);
+            if (stripe.side == 1) {
+                this.ctx.drawImage(this.textures[stripe.texNum], stripe.texX, stripe.texY, 1, 64 - stripe.texY * 2, x, stripe.end, this.res, stripe.start - stripe.end);
+            }
+            else {
+                this.ctx.drawImage(this.textures[stripe.texNum + 9], stripe.texX, stripe.texY, 1, 64 - stripe.texY * 2, x, stripe.end, this.res, stripe.start - stripe.end);
             }
         }
     }
