@@ -18,94 +18,115 @@ class RayCaster {
         this.drawStart;
         this.drawEnd;
     }
-    CastRay(x, texWidth, map, player, canv) {
-        this.hit = 0;
-        //calculate ray position and direction
-        this.cameraX = 2 * x / canv.width - 1; //x-coordinate in camera space
-        this.rayDirX = player.dirX + player.planeX * this.cameraX;
-        this.rayDirY = player.dirY + player.planeY * this.cameraX;
+    CastRays(start, end, texWidth, map, player, canv, textures, buffer) {
+        for (let x = start; x < end; x++) {
+            this.hit = 0;
+            //calculate ray position and direction
+            this.cameraX = 2 * x / canv.width - 1; //x-coordinate in camera space
+            this.rayDirX = player.dirX + player.planeX * this.cameraX;
+            this.rayDirY = player.dirY + player.planeY * this.cameraX;
 
-        //which box of the map we're in
-        this.mapX = Math.floor(player.posX);
-        this.mapY = Math.floor(player.posY);
+            //which box of the map we're in
+            this.mapX = Math.floor(player.posX);
+            this.mapY = Math.floor(player.posY);
 
-        //length of ray from one x or y-side to next x or y-side
-        this.deltaDistX = Math.abs(1 / this.rayDirX);
-        this.deltaDistY = Math.abs(1 / this.rayDirY);
+            //length of ray from one x or y-side to next x or y-side
+            this.deltaDistX = Math.abs(1 / this.rayDirX);
+            this.deltaDistY = Math.abs(1 / this.rayDirY);
 
-        if (this.rayDirX < 0) {
-            this.stepX = -1;
-            this.sideDistX = (player.posX - this.mapX) * this.deltaDistX;
-        }
-        else {
-            this.stepX = 1;
-            this.sideDistX = (this.mapX + 1 - player.posX) * this.deltaDistX;
-        }
-        if (this.rayDirY < 0) {
-            this.stepY = -1;
-            this.sideDistY = (player.posY - this.mapY) * this.deltaDistY;
-        }
-        else {
-            this.stepY = 1;
-            this.sideDistY = (this.mapY + 1 - player.posY) * this.deltaDistY;
-        }
-
-        //perform DDA
-        while (this.hit == 0) {
-            if (this.sideDistX < this.sideDistY) {
-                this.sideDistX += this.deltaDistX;
-                this.mapX += this.stepX;
-                this.side = 0;
+            if (this.rayDirX < 0) {
+                this.stepX = -1;
+                this.sideDistX = (player.posX - this.mapX) * this.deltaDistX;
             }
             else {
-                this.sideDistY += this.deltaDistY;
-                this.mapY += this.stepY;
-                this.side = 1;
+                this.stepX = 1;
+                this.sideDistX = (this.mapX + 1 - player.posX) * this.deltaDistX;
             }
-            if (map[this.mapX][this.mapY] > 0) this.hit = 1;
-        }
+            if (this.rayDirY < 0) {
+                this.stepY = -1;
+                this.sideDistY = (player.posY - this.mapY) * this.deltaDistY;
+            }
+            else {
+                this.stepY = 1;
+                this.sideDistY = (this.mapY + 1 - player.posY) * this.deltaDistY;
+            }
 
-        if (this.side == 0) {
-            this.perpWallDist = (this.mapX - player.posX + (1 - this.stepX) / 2) / this.rayDirX;
-        }
-        else {
-            this.perpWallDist = (this.mapY - player.posY + (1 - this.stepY) / 2) / this.rayDirY;
-        }
+            //perform DDA
+            while (this.hit == 0) {
+                if (this.sideDistX < this.sideDistY) {
+                    this.sideDistX += this.deltaDistX;
+                    this.mapX += this.stepX;
+                    this.side = 0;
+                }
+                else {
+                    this.sideDistY += this.deltaDistY;
+                    this.mapY += this.stepY;
+                    this.side = 1;
+                }
+                if (map[this.mapX][this.mapY] > 0) this.hit = 1;
+            }
 
-        //Calculate height of line to draw on screen
-        this.lineHeight = Math.floor(canv.height / this.perpWallDist);
+            if (this.side == 0) {
+                this.perpWallDist = (this.mapX - player.posX + (1 - this.stepX) / 2) / this.rayDirX;
+            }
+            else {
+                this.perpWallDist = (this.mapY - player.posY + (1 - this.stepY) / 2) / this.rayDirY;
+            }
 
-        //calculate lowest and highest pixel to fill in current stripe
-        this.drawStart = Math.floor(-this.lineHeight / 2 + canv.height / 2);
-        if (this.drawStart < 0) this.drawStart = 0;
-        this.drawEnd = Math.floor(this.lineHeight / 2 + canv.height / 2);
-        if (this.drawEnd >= canv.height) this.drawEnd = canv.height - 1;
+            //Calculate height of line to draw on screen
+            this.lineHeight = Math.floor(canv.height / this.perpWallDist);
 
-        //texturing calculations
-        const texNum = map[this.mapX][this.mapY] - 1;
-        let wallX;
-        if (this.side == 0) {
-            wallX = player.posY + this.perpWallDist * this.rayDirY;
-        }
-        else {
-            wallX = player.posX + this.perpWallDist * this.rayDirX;
-        }
-        wallX -= Math.floor(wallX);
-        let texX = Math.floor(wallX * texWidth);
-        if (this.side == 0 && this.rayDirX > 0) texX = texWidth - texX - 1;
-        if (this.side == 1 && this.rayDirY < 0) texX = texWidth - texX - 1;
-        let d = this.drawStart * 256 - canv.height * 128 + this.lineHeight * 128;
-        let texY = d * texWidth / this.lineHeight / 256;
+            //calculate lowest and highest pixel to fill in current stripe
+            this.drawStart = Math.floor(-this.lineHeight / 2 + canv.height / 2);
+            if (this.drawStart < 0) this.drawStart = 0;
+            this.drawEnd = Math.floor(this.lineHeight / 2 + canv.height / 2);
+            if (this.drawEnd >= canv.height) this.drawEnd = canv.height - 1;
 
-        return {
-            texNum: texNum,
-            texX: texX,
-            texY: texY,
-            start: this.drawStart,
-            end: this.drawEnd,
-            side: this.side
+            //texturing calculations
+            const texNum = map[this.mapX][this.mapY] - 1;
+            let wallX;
+            if (this.side == 0) {
+                wallX = player.posY + this.perpWallDist * this.rayDirY;
+            }
+            else {
+                wallX = player.posX + this.perpWallDist * this.rayDirX;
+            }
+            wallX -= Math.floor(wallX);
+            let texX = Math.floor(wallX * texWidth);
+            if (this.side == 0 && this.rayDirX > 0) texX = texWidth - texX - 1;
+            if (this.side == 1 && this.rayDirY < 0) texX = texWidth - texX - 1;
+
+            for (let y = this.drawStart; y < this.drawEnd; y++) {
+                const d = y * 256 - canv.height * 128 + this.lineHeight * 128;
+                let texY = Math.floor(d * texWidth / this.lineHeight / 256);
+                if (texY < 0) texY = 0;
+                const i = (x + y * canv.width) * 4;
+                const texI = (texX + texY * texWidth) * 4;
+                if (this.side == 1) {
+                    buffer[i] = textures[texNum].data[texI];
+                    buffer[i + 1] = textures[texNum].data[texI + 1];
+                    buffer[i + 2] = textures[texNum].data[texI + 2];
+                    buffer[i + 3] = 255;
+                }
+                else {
+                    buffer[i] = textures[texNum + 9].data[texI];
+                    buffer[i + 1] = textures[texNum + 9].data[texI + 1];
+                    buffer[i + 2] = textures[texNum + 9].data[texI + 2];
+                    buffer[i + 3] = 255;
+                }
+            }
+
+            // return {
+            //     texNum: texNum,
+            //     texX: texX,
+            //     texY: texY,
+            //     start: this.drawStart,
+            //     end: this.drawEnd,
+            //     side: this.side
+            // }
         }
     }
 }
 
 export { RayCaster };
+// rayCaster = new RayCaster();
