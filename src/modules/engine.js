@@ -6,9 +6,9 @@ class Engine {
     constructor() {
         this.updateRotation = this.updateRotation.bind(this);
 
-        this.res = 1;
-        this.stripes1 = [];
-        this.stripes2 = [];
+        this.res = 2;
+        // this.stripes1 = [];
+        // this.stripes2 = [];
         this.rayCaster = new RayCaster();
         // this.worker1 = new Worker("./modules/worker.js");
         // this.worker1.onmessage = (e) => {
@@ -23,15 +23,15 @@ class Engine {
         this.textures = [];
         this.textureAtlas = new Image();
         this.canv = document.createElement("canvas");
-        this.canv.width = window.innerWidth/2;
-        this.canv.height = window.innerHeight/2;
+        this.canv.width = window.innerWidth / this.res;
+        this.canv.height = window.innerHeight / this.res;
         this.canv.style.imageRendering = "pixelated";
         this.canv.style.width = "100%";
-        
         this.backBufferCanv = document.createElement("canvas");
         this.backBufferCanv.width = this.canv.width;
         this.backBufferCanv.height = this.canv.height;
-        this.backBufferCtx = this.backBufferCanv.getContext("2d"); //this.ctx.createImageData(this.canv.width, this.canv.height);
+        this.backBufferCtx = this.backBufferCanv.getContext("2d");
+        this.backBufferCtx.imageSmoothingEnabled = false;
         this.backBufferCanv.style.imageRendering = "pixelated";
         this.canv.addEventListener("touchend", (e) => {
             this.touched = false;
@@ -125,9 +125,12 @@ class Engine {
             }
         });
         window.addEventListener("resize", () => {
-            this.canv.width = window.innerWidth;
-            this.canv.height = window.innerHeight;
+            this.canv.width = window.innerWidth / this.res;
+            this.canv.height = window.innerHeight / this.res;
+            this.backBufferCanv.width = this.canv.width;
+            this.backBufferCanv.height = this.canv.height;
             this.ctx.imageSmoothingEnabled = false;
+            this.backBufferCtx.imageSmoothingEnabled = false;
         });
     }
     async init() {
@@ -157,7 +160,7 @@ class Engine {
     update(tFrame) {
         // update player position
         const frameTime = (tFrame - this.oldTime) / 1000;
-        this.movSpeed = frameTime * 3 * this.superSpeed;
+        this.movSpeed = frameTime * 2 * this.superSpeed;
 
         if (this.touched == true || this.player.rot != this.oldRot) {
             let rot = 0;
@@ -239,56 +242,13 @@ class Engine {
         this.ctx.fillRect(0, this.canv.height / 2, this.canv.width, this.canv.height);
 
         // draw textured walls with simple lighting
-        // for (let x = 0; x < this.canv.width; x += this.res) {
-        //     let stripe = this.rayCaster.CastRay(x, 64, this.map, this.player, this.canv);
-        //     if (stripe.side == 1) {
-        //         this.ctx.drawImage(this.textures[stripe.texNum], stripe.texX, stripe.texY, 1, 64 - stripe.texY * 2, x, stripe.end, this.res, stripe.start - stripe.end);
-        //     }
-        //     else {
-        //         this.ctx.drawImage(this.textures[stripe.texNum + 9], stripe.texX, stripe.texY, 1, 64 - stripe.texY * 2, x, stripe.end, this.res, stripe.start - stripe.end);
-        //     }
-        // }
-
-        // const stripes = this.stripes1.concat(this.stripes2);
-        // for (let x = 0; x < stripes.length; x += this.res) {
-        //     const stripe = stripes[x];
-        //     if (stripe.side == 1) {
-        //         this.ctx.drawImage(this.textures[stripe.texNum], stripe.texX, stripe.texY, 1, 64 - stripe.texY * 2, x, stripe.end, this.res, stripe.start - stripe.end);
-        //     }
-        //     else {
-        //         this.ctx.drawImage(this.textures[stripe.texNum + 9], stripe.texX, stripe.texY, 1, 64 - stripe.texY * 2, x, stripe.end, this.res, stripe.start - stripe.end);
-        //     }
-        // }
-
         const imgData = this.backBufferCtx.getImageData(0, 0, this.backBufferCanv.width, this.backBufferCanv.height);
         let data = imgData.data;
         this.rayCaster.CastRays(0, imgData.width, 64, this.map, this.player, this.canv, this.textures, data);
 
-
-        // for (let x = 0; x < imgData.width; x++) {
-        //     for (let y = 0; y < imgData.height; y++) {
-        //         const i = (x + y * imgData.width) * 4;
-        //         data[i] = 200;
-        //         data[i + 1] = 100;
-        //         data[i + 2] = 50;
-        //         data[i + 3] = 100;
-        //     }
-        // }
-
-        // for (let i = 0; i < data.length; i += 4) {
-        //     data[i] = 200;
-        //     data[i + 1] = 100;
-        //     data[i + 2] = 50;
-        //     data[i + 3] = 100;
-        // }
-
         this.backBufferCtx.putImageData(imgData, 0, 0)
         this.ctx.drawImage(this.backBufferCanv, 0, 0);
-        this.backBufferCtx.clearRect(0,0,this.backBufferCanv.width, this.backBufferCanv.height);
-
-        // for (let x = 0; x < 18; x++) {
-        //     this.ctx.putImageData(this.textures[x], x * 64, 10)
-        // }
+        this.backBufferCtx.clearRect(0, 0, this.backBufferCanv.width, this.backBufferCanv.height);
     }
 }
 

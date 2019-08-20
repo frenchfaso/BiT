@@ -17,6 +17,10 @@ class RayCaster {
         this.lineHeight;
         this.drawStart;
         this.drawEnd;
+        this.texX = 0;
+        this.texY = 0;
+        this.texNum = 0;
+        this.wallX = 0;
     }
     CastRays(start, end, texWidth, map, player, canv, textures, buffer) {
         for (let x = start; x < end; x++) {
@@ -83,47 +87,36 @@ class RayCaster {
             if (this.drawEnd >= canv.height) this.drawEnd = canv.height - 1;
 
             //texturing calculations
-            const texNum = map[this.mapX][this.mapY] - 1;
-            let wallX;
+            this.texNum = map[this.mapX][this.mapY] - 1;
             if (this.side == 0) {
-                wallX = player.posY + this.perpWallDist * this.rayDirY;
+                this.wallX = player.posY + this.perpWallDist * this.rayDirY;
             }
             else {
-                wallX = player.posX + this.perpWallDist * this.rayDirX;
+                this.wallX = player.posX + this.perpWallDist * this.rayDirX;
             }
-            wallX -= Math.floor(wallX);
-            let texX = Math.floor(wallX * texWidth);
-            if (this.side == 0 && this.rayDirX > 0) texX = texWidth - texX - 1;
-            if (this.side == 1 && this.rayDirY < 0) texX = texWidth - texX - 1;
+            this.wallX -= Math.floor(this.wallX);
+            this.texX = Math.floor(this.wallX * texWidth);
+            if (this.side == 0 && this.rayDirX > 0) this.texX = texWidth - this.texX - 1;
+            if (this.side == 1 && this.rayDirY < 0) this.texX = texWidth - this.texX - 1;
 
-            for (let y = this.drawStart; y < this.drawEnd; y++) {
-                const d = y * 256 - canv.height * 128 + this.lineHeight * 128;
-                let texY = Math.floor(d * texWidth / this.lineHeight / 256);
-                if (texY < 0) texY = 0;
+            for (let y = this.drawStart + 1; y < this.drawEnd; y++) {
+                this.texY = Math.floor((y * 256 - canv.height * 128 + this.lineHeight * 128) * texWidth / this.lineHeight / 256);
+
                 const i = (x + y * canv.width) * 4;
-                const texI = (texX + texY * texWidth) * 4;
+                const texI = (this.texX + this.texY * texWidth) * 4;
                 if (this.side == 1) {
-                    buffer[i] = textures[texNum].data[texI];
-                    buffer[i + 1] = textures[texNum].data[texI + 1];
-                    buffer[i + 2] = textures[texNum].data[texI + 2];
+                    buffer[i] = textures[this.texNum].data[texI];
+                    buffer[i + 1] = textures[this.texNum].data[texI + 1];
+                    buffer[i + 2] = textures[this.texNum].data[texI + 2];
                     buffer[i + 3] = 255;
                 }
                 else {
-                    buffer[i] = textures[texNum + 9].data[texI];
-                    buffer[i + 1] = textures[texNum + 9].data[texI + 1];
-                    buffer[i + 2] = textures[texNum + 9].data[texI + 2];
+                    buffer[i] = textures[this.texNum + 9].data[texI];
+                    buffer[i + 1] = textures[this.texNum + 9].data[texI + 1];
+                    buffer[i + 2] = textures[this.texNum + 9].data[texI + 2];
                     buffer[i + 3] = 255;
                 }
             }
-
-            // return {
-            //     texNum: texNum,
-            //     texX: texX,
-            //     texY: texY,
-            //     start: this.drawStart,
-            //     end: this.drawEnd,
-            //     side: this.side
-            // }
         }
     }
 }
