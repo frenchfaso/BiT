@@ -1,23 +1,37 @@
-import { RayCaster } from "./raycaster.js";
+// import { RayCaster } from "./raycaster.js";
 import { Player } from "./player.js";
 import { Map } from "./map.js";
 
 class Engine {
     constructor() {
         this.updateRotation = this.updateRotation.bind(this);
-
         this.res = 2;
-        // this.stripes1 = [];
-        // this.stripes2 = [];
-        this.rayCaster = new RayCaster();
-        // this.worker1 = new Worker("./modules/worker.js");
-        // this.worker1.onmessage = (e) => {
-        //     this.stripes1 = e.data;
-        // };
-        // this.worker2 = new Worker("./modules/worker.js");
-        // this.worker2.onmessage = (e) => {
-        //     this.stripes2 = e.data;
-        // };
+        this.threads = 2;
+        this.workers = [];
+        this.workerCanvs = [];
+        this.workerCtxs = [];
+        // this.rayCaster = new RayCaster();
+
+        // for(let t = 0; t < this.threads; t++){
+        //     let worker = new Worker("./modules/worker.js");
+        //     worker.id = t;
+        //     worker.onmessage = (e) => {
+        //         const imgData = new ImageData(new Uint8ClampedArray(e.data), this.canv.width, this.canv.height);
+        //         this.workerCtxs[e.data.id].putImageData(imgData, 0, 0);
+        //     };
+            
+        // }
+
+        this.worker1 = new Worker("./modules/worker.js");
+        this.worker1.onmessage = (e) => {
+            const imgData = new ImageData(new Uint8ClampedArray(e.data), this.canv.width, this.canv.height);
+            this.workerCtx1.putImageData(imgData, 0, 0);
+        };
+        this.worker2 = new Worker("./modules/worker.js");
+        this.worker2.onmessage = (e) => {
+            const imgData = new ImageData(new Uint8ClampedArray(e.data), this.canv.width, this.canv.height);
+            this.workerCtx2.putImageData(imgData, 0, 0);
+        };
         this.player = new Player();
         this.map = new Map().map;
         this.textures = [];
@@ -26,13 +40,22 @@ class Engine {
         this.canv.width = window.innerWidth / this.res;
         this.canv.height = window.innerHeight / this.res;
         this.canv.style.imageRendering = "pixelated";
-        this.canv.style.width = "100%";
-        this.backBufferCanv = document.createElement("canvas");
-        this.backBufferCanv.width = this.canv.width;
-        this.backBufferCanv.height = this.canv.height;
-        this.backBufferCtx = this.backBufferCanv.getContext("2d");
-        this.backBufferCtx.imageSmoothingEnabled = false;
-        this.backBufferCanv.style.imageRendering = "pixelated";
+        this.canv.style.width = "100vw";
+
+        this.workerCanv1 = document.createElement("canvas");
+        this.workerCanv1.width = this.canv.width;
+        this.workerCanv1.height = this.canv.height;
+        this.workerCanv1.style.imageRendering = "pixelated";
+        this.workerCtx1 = this.workerCanv1.getContext("2d");
+        this.workerCtx1.imageSmoothingEnabled = false;
+        
+        this.workerCanv2 = document.createElement("canvas");
+        this.workerCanv2.width = this.canv.width;
+        this.workerCanv2.height = this.canv.height;
+        this.workerCanv2.style.imageRendering = "pixelated";
+        this.workerCtx2 = this.workerCanv2.getContext("2d");
+        this.workerCtx2.imageSmoothingEnabled = false;
+
         this.canv.addEventListener("touchend", (e) => {
             this.touched = false;
             this.oldTouchDX = 0;
@@ -125,12 +148,9 @@ class Engine {
             }
         });
         window.addEventListener("resize", () => {
-            this.canv.width = window.innerWidth / this.res;
-            this.canv.height = window.innerHeight / this.res;
-            this.backBufferCanv.width = this.canv.width;
-            this.backBufferCanv.height = this.canv.height;
+            // this.canv.width = window.innerWidth / this.res;
+            // this.canv.height = window.innerHeight / this.res;
             this.ctx.imageSmoothingEnabled = false;
-            this.backBufferCtx.imageSmoothingEnabled = false;
         });
     }
     async init() {
@@ -217,22 +237,25 @@ class Engine {
             if (this.map[x2][y2] == 0) this.player.posY -= this.player.dirY * this.movSpeed;
         }
         this.oldTime = tFrame;
-        // this.worker1.postMessage({
-        //     start: 0,
-        //     end: this.canv.width / 2,
-        //     texWidth: 64,
-        //     map: this.map,
-        //     player: this.player,
-        //     canv: { width: this.canv.width, height: this.canv.height }
-        // });
-        // this.worker2.postMessage({
-        //     start: this.canv.width / 2 + 1,
-        //     end: this.canv.width,
-        //     texWidth: 64,
-        //     map: this.map,
-        //     player: this.player,
-        //     canv: { width: this.canv.width, height: this.canv.height }
-        // });
+
+        this.worker1.postMessage({
+            start: 0,
+            end: this.canv.width,
+            texWidth: 64,
+            map: this.map,
+            player: this.player,
+            canv: { width: this.canv.width, height: this.canv.height },
+            textures: this.textures
+        });
+        this.worker2.postMessage({
+            start: 1,
+            end: this.canv.width,
+            texWidth: 64,
+            map: this.map,
+            player: this.player,
+            canv: { width: this.canv.width, height: this.canv.height },
+            textures: this.textures
+        });
     }
     render() {
         // draw floor and ceiling
@@ -241,14 +264,9 @@ class Engine {
         this.ctx.fillStyle = "#bbbbbb";
         this.ctx.fillRect(0, this.canv.height / 2, this.canv.width, this.canv.height);
 
-        // draw textured walls with simple lighting
-        const imgData = this.backBufferCtx.getImageData(0, 0, this.backBufferCanv.width, this.backBufferCanv.height);
-        let data = imgData.data;
-        this.rayCaster.CastRays(0, imgData.width, 64, this.map, this.player, this.canv, this.textures, data);
-
-        this.backBufferCtx.putImageData(imgData, 0, 0)
-        this.ctx.drawImage(this.backBufferCanv, 0, 0);
-        this.backBufferCtx.clearRect(0, 0, this.backBufferCanv.width, this.backBufferCanv.height);
+        // draw textured walls with simple lighting (rendered on 2 web workers)        
+        this.ctx.drawImage(this.workerCanv1, 0, 0);
+        this.ctx.drawImage(this.workerCanv2, 0, 0);
     }
 }
 

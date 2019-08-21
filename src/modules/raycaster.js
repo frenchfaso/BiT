@@ -23,7 +23,7 @@ class RayCaster {
         this.wallX = 0;
     }
     CastRays(start, end, texWidth, map, player, canv, textures, buffer) {
-        for (let x = start; x < end; x++) {
+        for (let x = start; x < end; x+=2) {
             this.hit = 0;
             //calculate ray position and direction
             this.cameraX = 2 * x / canv.width - 1; //x-coordinate in camera space
@@ -101,7 +101,6 @@ class RayCaster {
 
             for (let y = this.drawStart + 1; y < this.drawEnd; y++) {
                 this.texY = Math.floor((y * 256 - canv.height * 128 + this.lineHeight * 128) * texWidth / this.lineHeight / 256);
-
                 const i = (x + y * canv.width) * 4;
                 const texI = (this.texX + this.texY * texWidth) * 4;
                 if (this.side == 1) {
@@ -121,5 +120,5 @@ class RayCaster {
     }
 }
 
-export { RayCaster };
-// rayCaster = new RayCaster();
+// export { RayCaster };
+rayCaster = new RayCaster();
