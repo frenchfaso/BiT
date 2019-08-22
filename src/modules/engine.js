@@ -1,37 +1,13 @@
-// import { RayCaster } from "./raycaster.js";
 import { Player } from "./player.js";
 import { Map } from "./map.js";
 
 class Engine {
     constructor() {
         this.updateRotation = this.updateRotation.bind(this);
-        this.res = 2;
+        this.res = 1;
         this.threads = 2;
+        this.count = 0;
         this.workers = [];
-        this.workerCanvs = [];
-        this.workerCtxs = [];
-        // this.rayCaster = new RayCaster();
-
-        // for(let t = 0; t < this.threads; t++){
-        //     let worker = new Worker("./modules/worker.js");
-        //     worker.id = t;
-        //     worker.onmessage = (e) => {
-        //         const imgData = new ImageData(new Uint8ClampedArray(e.data), this.canv.width, this.canv.height);
-        //         this.workerCtxs[e.data.id].putImageData(imgData, 0, 0);
-        //     };
-            
-        // }
-
-        this.worker1 = new Worker("./modules/worker.js");
-        this.worker1.onmessage = (e) => {
-            const imgData = new ImageData(new Uint8ClampedArray(e.data), this.canv.width, this.canv.height);
-            this.workerCtx1.putImageData(imgData, 0, 0);
-        };
-        this.worker2 = new Worker("./modules/worker.js");
-        this.worker2.onmessage = (e) => {
-            const imgData = new ImageData(new Uint8ClampedArray(e.data), this.canv.width, this.canv.height);
-            this.workerCtx2.putImageData(imgData, 0, 0);
-        };
         this.player = new Player();
         this.map = new Map().map;
         this.textures = [];
@@ -41,21 +17,37 @@ class Engine {
         this.canv.height = window.innerHeight / this.res;
         this.canv.style.imageRendering = "pixelated";
         this.canv.style.width = "100vw";
+        this.ctx = this.canv.getContext("2d", { alpha: false });
+        this.ctx.imageSmoothingEnabled = false;
+        document.body.appendChild(this.canv);
 
-        this.workerCanv1 = document.createElement("canvas");
-        this.workerCanv1.width = this.canv.width;
-        this.workerCanv1.height = this.canv.height;
-        this.workerCanv1.style.imageRendering = "pixelated";
-        this.workerCtx1 = this.workerCanv1.getContext("2d");
-        this.workerCtx1.imageSmoothingEnabled = false;
-        
-        this.workerCanv2 = document.createElement("canvas");
-        this.workerCanv2.width = this.canv.width;
-        this.workerCanv2.height = this.canv.height;
-        this.workerCanv2.style.imageRendering = "pixelated";
-        this.workerCtx2 = this.workerCanv2.getContext("2d");
-        this.workerCtx2.imageSmoothingEnabled = false;
+        this.backBufferCanv = document.createElement("canvas");
+        this.backBufferCanv.width = this.canv.width;
+        this.backBufferCanv.height = this.canv.height;
+        // this.backBufferCanv.style.imageRendering = "pixelated";
+        this.backBufferCtx = this.backBufferCanv.getContext("2d", { alpha: true });
+        this.backBufferCtx.imageSmoothingEnabled = false;
 
+        for (let t = 0; t < this.threads; t++) {
+            const worker = new Worker("./raycaster.js");
+            worker.onmessage = (e) => {
+                const imgData = new ImageData(new Uint8ClampedArray(e.data), this.canv.width, this.canv.height);
+                this.workers[t].ctx.putImageData(imgData, 0, 0);
+                this.workers[t].done = true;
+            };
+            const canv = document.createElement("canvas");
+            canv.width = this.canv.width;
+            canv.height = this.canv.height;
+            canv.style.imageRendering = "pixelated";
+            const ctx = canv.getContext("2d");
+            ctx.imageSmoothingEnabled = false;
+            this.workers[t] = {
+                worker: worker,
+                canv: canv,
+                ctx: ctx,
+                done: true
+            };
+        }
         this.canv.addEventListener("touchend", (e) => {
             this.touched = false;
             this.oldTouchDX = 0;
@@ -80,13 +72,11 @@ class Engine {
             this.oldTouchDX = e.touches[0].clientX;
             this.oldTouchDY = e.touches[0].clientY;
         }, { passive: false });
-        document.body.appendChild(this.canv);
+
         this.canv.addEventListener("click", () => {
             this.canv.requestPointerLock();
         });
         this.mouseLocked = false;
-        this.ctx = this.canv.getContext("2d", { alpha: false });
-        this.ctx.imageSmoothingEnabled = false;
         this.oldTime = 0;
         this.oldRot = 0;
         this.touched = false;
@@ -237,36 +227,35 @@ class Engine {
             if (this.map[x2][y2] == 0) this.player.posY -= this.player.dirY * this.movSpeed;
         }
         this.oldTime = tFrame;
-
-        this.worker1.postMessage({
-            start: 0,
-            end: this.canv.width,
-            texWidth: 64,
-            map: this.map,
-            player: this.player,
-            canv: { width: this.canv.width, height: this.canv.height },
-            textures: this.textures
-        });
-        this.worker2.postMessage({
-            start: 1,
-            end: this.canv.width,
-            texWidth: 64,
-            map: this.map,
-            player: this.player,
-            canv: { width: this.canv.width, height: this.canv.height },
-            textures: this.textures
-        });
     }
     render() {
-        // draw floor and ceiling
-        this.ctx.fillStyle = "#777777";
-        this.ctx.fillRect(0, 0, this.canv.width, this.canv.height / 2);
-        this.ctx.fillStyle = "#bbbbbb";
-        this.ctx.fillRect(0, this.canv.height / 2, this.canv.width, this.canv.height);
-
-        // draw textured walls with simple lighting (rendered on 2 web workers)        
-        this.ctx.drawImage(this.workerCanv1, 0, 0);
-        this.ctx.drawImage(this.workerCanv2, 0, 0);
+        if (this.count >= this.threads) {
+            this.count = 0;
+            const imgData = this.backBufferCtx.getImageData(0, 0, this.backBufferCanv.width, this.backBufferCanv.height)
+            this.ctx.putImageData(imgData, 0, 0);
+            this.backBufferCtx.fillStyle = "#777777";
+            this.backBufferCtx.fillRect(0, 0, this.canv.width, this.canv.height / 2);
+            this.backBufferCtx.fillStyle = "#bbbbbb";
+            this.backBufferCtx.fillRect(0, this.canv.height / 2, this.canv.width, this.canv.height);
+        }
+        for (let i = 0; i < this.workers.length; i++) {
+            if (this.workers[i].done) {
+                this.count++;
+                this.backBufferCtx.drawImage(this.workers[i].canv, 0, 0);
+                this.workers[i].done = false;
+                this.workers[i].worker.postMessage({
+                    start: i,
+                    width: this.canv.width,
+                    height: this.canv.height,
+                    threads: this.workers.length,
+                    map: this.map,
+                    player: this.player,
+                    textures: this.textures,
+                    texWidth: 64
+                });
+            }
+        }
+        // console.log(this.count);
     }
 }
 

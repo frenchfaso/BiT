@@ -22,11 +22,11 @@ class RayCaster {
         this.texNum = 0;
         this.wallX = 0;
     }
-    CastRays(start, end, texWidth, map, player, canv, textures, buffer) {
-        for (let x = start; x < end; x+=2) {
+    CastRays(start, width, height, threads, map, player, textures, texWidth, buffer) {
+        for (let x = start; x < width; x+=threads) {
             this.hit = 0;
             //calculate ray position and direction
-            this.cameraX = 2 * x / canv.width - 1; //x-coordinate in camera space
+            this.cameraX = 2 * x / width - 1; //x-coordinate in camera space
             this.rayDirX = player.dirX + player.planeX * this.cameraX;
             this.rayDirY = player.dirY + player.planeY * this.cameraX;
 
@@ -78,13 +78,13 @@ class RayCaster {
             }
 
             //Calculate height of line to draw on screen
-            this.lineHeight = Math.floor(canv.height / this.perpWallDist);
+            this.lineHeight = Math.floor(height / this.perpWallDist);
 
             //calculate lowest and highest pixel to fill in current stripe
-            this.drawStart = Math.floor(-this.lineHeight / 2 + canv.height / 2);
+            this.drawStart = Math.floor(-this.lineHeight / 2 + height / 2);
             if (this.drawStart < 0) this.drawStart = 0;
-            this.drawEnd = Math.floor(this.lineHeight / 2 + canv.height / 2);
-            if (this.drawEnd >= canv.height) this.drawEnd = canv.height - 1;
+            this.drawEnd = Math.floor(this.lineHeight / 2 + height / 2);
+            if (this.drawEnd >= height) this.drawEnd = height - 1;
 
             //texturing calculations
             this.texNum = map[this.mapX][this.mapY] - 1;
@@ -100,8 +100,8 @@ class RayCaster {
             if (this.side == 1 && this.rayDirY < 0) this.texX = texWidth - this.texX - 1;
 
             for (let y = this.drawStart + 1; y < this.drawEnd; y++) {
-                this.texY = Math.floor((y * 256 - canv.height * 128 + this.lineHeight * 128) * texWidth / this.lineHeight / 256);
-                const i = (x + y * canv.width) * 4;
+                this.texY = Math.floor((y * 256 - height * 128 + this.lineHeight * 128) * texWidth / this.lineHeight / 256);
+                const i = (x + y * width) * 4;
                 const texI = (this.texX + this.texY * texWidth) * 4;
                 if (this.side == 1) {
                     buffer[i] = textures[this.texNum].data[texI];
@@ -120,5 +120,11 @@ class RayCaster {
     }
 }
 
-// export { RayCaster };
-rayCaster = new RayCaster();
+const rayCaster = new RayCaster();
+
+this.onmessage = (e) => {
+    const data = e.data;
+    let buffer = new Uint8ClampedArray(data.width * data.height * 4)
+    rayCaster.CastRays(data.start, data.width, data.height, data.threads, data.map, data.player, data.textures, data.texWidth, buffer);
+    postMessage(buffer.buffer, [buffer.buffer]);
+}
