@@ -4,9 +4,9 @@ import { Map } from "./map.js";
 class Engine {
     constructor() {
         this.updateRotation = this.updateRotation.bind(this);
-        this.res = 1;
-        this.threads = 2;
-        this.count = 0;
+        this.res = 2;
+        this.threads = 1;
+        // this.count = this.threads;
         this.workers = [];
         this.player = new Player();
         this.map = new Map().map;
@@ -229,8 +229,10 @@ class Engine {
         this.oldTime = tFrame;
     }
     render() {
-        if (this.count >= this.threads) {
-            this.count = 0;
+        const count = this.workers.filter((el)=>{
+            return el.done==true;
+        }).length;
+        if (count == this.threads) {
             const imgData = this.backBufferCtx.getImageData(0, 0, this.backBufferCanv.width, this.backBufferCanv.height)
             this.ctx.putImageData(imgData, 0, 0);
             this.backBufferCtx.fillStyle = "#777777";
@@ -239,15 +241,14 @@ class Engine {
             this.backBufferCtx.fillRect(0, this.canv.height / 2, this.canv.width, this.canv.height);
         }
         for (let i = 0; i < this.workers.length; i++) {
-            if (this.workers[i].done) {
-                this.count++;
+            if (this.workers[i].done == true) {
                 this.backBufferCtx.drawImage(this.workers[i].canv, 0, 0);
                 this.workers[i].done = false;
                 this.workers[i].worker.postMessage({
                     start: i,
                     width: this.canv.width,
                     height: this.canv.height,
-                    threads: this.workers.length,
+                    threads: this.threads,
                     map: this.map,
                     player: this.player,
                     textures: this.textures,
@@ -255,7 +256,6 @@ class Engine {
                 });
             }
         }
-        // console.log(this.count);
     }
 }
 
