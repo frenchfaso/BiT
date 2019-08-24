@@ -21,9 +21,16 @@ class RayCaster {
         this.texY = 0;
         this.texNum = 0;
         this.wallX = 0;
+        this.floorXWall = 0.0;
+        this.floorYWall = 0.0;
+        this.distWall;
+        this.distPlayer;
+        this.currentDist;
+        this.floorTexX = 0;
+        this.floorTexY = 0;
     }
     CastRays(start, width, height, threads, map, player, textures, texWidth, buffer) {
-        for (let x = start; x < width; x+=threads) {
+        for (let x = start; x < width; x += threads) {
             this.hit = 0;
             //calculate ray position and direction
             this.cameraX = 2 * x / width - 1; //x-coordinate in camera space
@@ -87,7 +94,7 @@ class RayCaster {
             if (this.drawEnd >= height) this.drawEnd = height - 1;
 
             //texturing calculations
-            this.texNum = map[this.mapX][this.mapY] - 1;
+            this.texNum = map[this.mapX][this.mapY];
             if (this.side == 0) {
                 this.wallX = player.posY + this.perpWallDist * this.rayDirY;
             }
@@ -116,15 +123,67 @@ class RayCaster {
                     buffer[i + 3] = 255;
                 }
             }
+
+            //FLOOR CASTING
+            //4 different wall directions possible
+            if (this.side == 0 && this.rayDirX > 0) {
+                this.floorXWall = this.mapX;
+                this.floorYWall = this.mapY + this.wallX;
+            }
+            else if (this.side == 0 && this.rayDirX < 0) {
+                this.floorXWall = this.mapX + 1.0;
+                this.floorYWall = this.mapY + this.wallX;
+            }
+            else if (this.side == 1 && this.rayDirY > 0) {
+                this.floorXWall = this.mapX + this.wallX;
+                this.floorYWall = this.mapY;
+            }
+            else {
+                this.floorXWall = this.mapX + this.wallX;
+                this.floorYWall = this.mapY + 1.0;
+            }
+
+            this.distWall = this.perpWallDist;
+            this.distPlayer = 0.0;
+
+            if (this.drawEnd < 0) this.drawEnd = height; //becomes < 0 when the integer overflows
+
+            //draw the floor from drawEnd to the bottom of the screen
+            for (let y = this.drawEnd; y < height; y++) {
+                this.currentDist = height / (2.0 * y - height); //you could make a small lookup table for this instead
+
+                let weight = (this.currentDist - this.distPlayer) / (this.distWall - this.distPlayer);
+
+                let currentFloorX = weight * this.floorXWall + (1.0 - weight) * player.posX;
+                let currentFloorY = weight * this.floorYWall + (1.0 - weight) * player.posY;
+
+
+                this.floorTexX = Math.floor(currentFloorX * texWidth) % texWidth;
+                this.floorTexY = Math.floor(currentFloorY * texWidth) % texWidth;
+                const i = (x + y * width) * 4;
+                const i2 = (x + (height - y) * width) * 4;
+                const texI = (this.floorTexX + this.floorTexY * texWidth) * 4;
+
+                //floor
+                buffer[i2] = textures[7].data[texI];
+                buffer[i2 + 1] = textures[7].data[texI + 1];
+                buffer[i2 + 2] = textures[7].data[texI + 2];
+                buffer[i2 + 3] = 255;
+                //ceiling (symmetrical!)
+                buffer[i] = textures[16].data[texI];
+                buffer[i + 1] = textures[16].data[texI + 1];
+                buffer[i + 2] = textures[16].data[texI + 2];
+                buffer[i + 3] = 255;
+            }
         }
     }
 }
 
 const rayCaster = new RayCaster();
+let byteArray;
 
 this.onmessage = (e) => {
-    const data = e.data;
-    let buffer = new Uint8ClampedArray(data.width * data.height * 4)
-    rayCaster.CastRays(data.start, data.width, data.height, data.threads, data.map, data.player, data.textures, data.texWidth, buffer);
-    postMessage(buffer.buffer, [buffer.buffer]);
+    byteArray = new Uint8ClampedArray(e.data.width * e.data.height * 4)
+    rayCaster.CastRays(e.data.start, e.data.width, e.data.height, e.data.threads, e.data.map, e.data.player, e.data.textures, e.data.texWidth, byteArray);
+    postMessage(byteArray.buffer, [byteArray.buffer]);
 }

@@ -6,7 +6,7 @@
         {
             "label": "closure build",
             "type": "shell",
-            "command": "java -jar closure.jar --language_out ECMASCRIPT_2017 --compilation_level ADVANCED --js_output_file build/BiT.js --js src/app.js src/modules/*.js",
+            "command": "java -jar closure.jar --language_out ECMASCRIPT_2017 --compilation_level SIMPLE --js_output_file build/BiT.js --js src/app.js src/modules/*.js",
             "group": {
                 "kind": "build",
                 "isDefault": true

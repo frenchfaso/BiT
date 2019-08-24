@@ -4,9 +4,8 @@ import { Map } from "./map.js";
 class Engine {
     constructor() {
         this.updateRotation = this.updateRotation.bind(this);
-        this.res = 2;
-        this.threads = 1;
-        // this.count = this.threads;
+        this.res = 1;
+        this.threads = 2;
         this.workers = [];
         this.player = new Player();
         this.map = new Map().map;
@@ -15,7 +14,7 @@ class Engine {
         this.canv = document.createElement("canvas");
         this.canv.width = window.innerWidth / this.res;
         this.canv.height = window.innerHeight / this.res;
-        this.canv.style.imageRendering = "pixelated";
+        this.canv.style.imageRendering = "crisp-edges";
         this.canv.style.width = "100vw";
         this.ctx = this.canv.getContext("2d", { alpha: false });
         this.ctx.imageSmoothingEnabled = false;
@@ -24,8 +23,8 @@ class Engine {
         this.backBufferCanv = document.createElement("canvas");
         this.backBufferCanv.width = this.canv.width;
         this.backBufferCanv.height = this.canv.height;
-        // this.backBufferCanv.style.imageRendering = "pixelated";
-        this.backBufferCtx = this.backBufferCanv.getContext("2d", { alpha: true });
+        this.backBufferCanv.style.imageRendering = "pixelated";
+        this.backBufferCtx = this.backBufferCanv.getContext("2d", { alpha: false });
         this.backBufferCtx.imageSmoothingEnabled = false;
 
         for (let t = 0; t < this.threads; t++) {
@@ -33,13 +32,14 @@ class Engine {
             worker.onmessage = (e) => {
                 const imgData = new ImageData(new Uint8ClampedArray(e.data), this.canv.width, this.canv.height);
                 this.workers[t].ctx.putImageData(imgData, 0, 0);
+                this.backBufferCtx.drawImage(this.workers[t].canv, 0, 0);
                 this.workers[t].done = true;
             };
             const canv = document.createElement("canvas");
             canv.width = this.canv.width;
             canv.height = this.canv.height;
             canv.style.imageRendering = "pixelated";
-            const ctx = canv.getContext("2d");
+            const ctx = canv.getContext("2d", { alpha: true });
             ctx.imageSmoothingEnabled = false;
             this.workers[t] = {
                 worker: worker,
@@ -229,20 +229,19 @@ class Engine {
         this.oldTime = tFrame;
     }
     render() {
-        const count = this.workers.filter((el)=>{
-            return el.done==true;
+        const count = this.workers.filter((el) => {
+            return el.done == true;
         }).length;
         if (count == this.threads) {
-            const imgData = this.backBufferCtx.getImageData(0, 0, this.backBufferCanv.width, this.backBufferCanv.height)
-            this.ctx.putImageData(imgData, 0, 0);
+            this.ctx.drawImage(this.backBufferCanv, 0, 0);
+
             this.backBufferCtx.fillStyle = "#777777";
             this.backBufferCtx.fillRect(0, 0, this.canv.width, this.canv.height / 2);
             this.backBufferCtx.fillStyle = "#bbbbbb";
             this.backBufferCtx.fillRect(0, this.canv.height / 2, this.canv.width, this.canv.height);
-        }
-        for (let i = 0; i < this.workers.length; i++) {
-            if (this.workers[i].done == true) {
-                this.backBufferCtx.drawImage(this.workers[i].canv, 0, 0);
+
+
+            for (let i = 0; i < this.workers.length; i++) {
                 this.workers[i].done = false;
                 this.workers[i].worker.postMessage({
                     start: i,
