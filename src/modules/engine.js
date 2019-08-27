@@ -146,8 +146,9 @@ class Engine {
                         this.workers[t].done = true;
                     };
                     worker.postMessage({
-                        type: "init",
-                        textures: this.textures
+                        textures: this.textures,
+                        map: this.map,
+                        threads: this.threads
                     });
                     const canv = document.createElement("canvas");
                     canv.width = this.canv.width;
@@ -243,8 +244,6 @@ class Engine {
                     start: i,
                     width: this.canv.width,
                     height: this.canv.height,
-                    threads: this.threads,
-                    map: this.map,
                     player: this.player
                 });
             }

@@ -184,15 +184,19 @@ const rayCaster = new RayCaster();
 let byteArray;
 let textures = [];
 let texSize = 0;
+let map = [];
+let threads = 0;
 
-onmessage = (e) => {
-    if (e.data.type == "init") {
-        textures = e.data.textures;
-        texSize = textures[0].width;
-    }
-    else {
+let workerInit = function (e) {
+    textures = e.data.textures;
+    texSize = textures[0].width;
+    threads = e.data.threads;
+    map = e.data.map;
+    removeEventListener("message", workerInit);
+    addEventListener("message", (e) => {
         byteArray = new Uint8ClampedArray(e.data.width * e.data.height * 4)
-        rayCaster.CastRays(e.data.start, e.data.width, e.data.height, e.data.threads, e.data.map, e.data.player, textures, texSize, byteArray);
+        rayCaster.CastRays(e.data.start, e.data.width, e.data.height, threads, map, e.data.player, textures, texSize, byteArray);
         postMessage(byteArray.buffer, [byteArray.buffer]);
-    }
+    });
 }
+addEventListener("message", workerInit);
