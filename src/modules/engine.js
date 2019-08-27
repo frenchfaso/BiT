@@ -26,28 +26,6 @@ class Engine {
         this.backBufferCanv.style.imageRendering = "pixelated";
         this.backBufferCtx = this.backBufferCanv.getContext("2d", { alpha: false });
         this.backBufferCtx.imageSmoothingEnabled = false;
-
-        for (let t = 0; t < this.threads; t++) {
-            const worker = new Worker("./raycaster.js");
-            worker.onmessage = (e) => {
-                const imgData = new ImageData(new Uint8ClampedArray(e.data), this.canv.width, this.canv.height);
-                this.workers[t].ctx.putImageData(imgData, 0, 0);
-                this.backBufferCtx.drawImage(this.workers[t].canv, 0, 0);
-                this.workers[t].done = true;
-            };
-            const canv = document.createElement("canvas");
-            canv.width = this.canv.width;
-            canv.height = this.canv.height;
-            canv.style.imageRendering = "pixelated";
-            const ctx = canv.getContext("2d", { alpha: true });
-            ctx.imageSmoothingEnabled = false;
-            this.workers[t] = {
-                worker: worker,
-                canv: canv,
-                ctx: ctx,
-                done: true
-            };
-        }
         this.canv.addEventListener("touchend", (e) => {
             this.touched = false;
             this.oldTouchDX = 0;
@@ -159,6 +137,31 @@ class Engine {
                     ctx.fillRect(0, 0, offCanv.width, offCanv.height);
                     this.textures[t + 9] = ctx.getImageData(0, 0, offCanv.width, offCanv.height);
                 }
+                for (let t = 0; t < this.threads; t++) {
+                    const worker = new Worker(`./raycaster.js`);
+                    worker.onmessage = (e) => {
+                        const imgData = new ImageData(new Uint8ClampedArray(e.data), this.canv.width, this.canv.height);
+                        this.workers[t].ctx.putImageData(imgData, 0, 0);
+                        this.backBufferCtx.drawImage(this.workers[t].canv, 0, 0);
+                        this.workers[t].done = true;
+                    };
+                    worker.postMessage({
+                        type: "init",
+                        textures: this.textures
+                    });
+                    const canv = document.createElement("canvas");
+                    canv.width = this.canv.width;
+                    canv.height = this.canv.height;
+                    canv.style.imageRendering = "pixelated";
+                    const ctx = canv.getContext("2d", { alpha: true });
+                    ctx.imageSmoothingEnabled = false;
+                    this.workers[t] = {
+                        worker: worker,
+                        canv: canv,
+                        ctx: ctx,
+                        done: true
+                    };
+                }
                 resolve();
             });
             this.textureAtlas.src = "./textures.webp";
@@ -229,18 +232,11 @@ class Engine {
         this.oldTime = tFrame;
     }
     render() {
-        const count = this.workers.filter((el) => {
+        let count = this.workers.filter((el) => {
             return el.done == true;
         }).length;
         if (count == this.threads) {
             this.ctx.drawImage(this.backBufferCanv, 0, 0);
-
-            this.backBufferCtx.fillStyle = "#777777";
-            this.backBufferCtx.fillRect(0, 0, this.canv.width, this.canv.height / 2);
-            this.backBufferCtx.fillStyle = "#bbbbbb";
-            this.backBufferCtx.fillRect(0, this.canv.height / 2, this.canv.width, this.canv.height);
-
-
             for (let i = 0; i < this.workers.length; i++) {
                 this.workers[i].done = false;
                 this.workers[i].worker.postMessage({
@@ -249,9 +245,7 @@ class Engine {
                     height: this.canv.height,
                     threads: this.threads,
                     map: this.map,
-                    player: this.player,
-                    textures: this.textures,
-                    texWidth: 64
+                    player: this.player
                 });
             }
         }

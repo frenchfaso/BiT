@@ -29,6 +29,7 @@ class RayCaster {
         this.floorTexX = 0;
         this.floorTexY = 0;
     }
+
     CastRays(start, width, height, threads, map, player, textures, texWidth, buffer) {
         for (let x = start; x < width; x += threads) {
             this.hit = 0;
@@ -149,7 +150,7 @@ class RayCaster {
             if (this.drawEnd < 0) this.drawEnd = height; //becomes < 0 when the integer overflows
 
             //draw the floor from drawEnd to the bottom of the screen
-            for (let y = this.drawEnd; y < height; y++) {
+            for (let y = this.drawEnd; y < height + 1; y++) {
                 this.currentDist = height / (2.0 * y - height); //you could make a small lookup table for this instead
 
                 let weight = (this.currentDist - this.distPlayer) / (this.distWall - this.distPlayer);
@@ -181,9 +182,17 @@ class RayCaster {
 
 const rayCaster = new RayCaster();
 let byteArray;
+let textures = [];
+let texSize = 0;
 
-this.onmessage = (e) => {
-    byteArray = new Uint8ClampedArray(e.data.width * e.data.height * 4)
-    rayCaster.CastRays(e.data.start, e.data.width, e.data.height, e.data.threads, e.data.map, e.data.player, e.data.textures, e.data.texWidth, byteArray);
-    postMessage(byteArray.buffer, [byteArray.buffer]);
+onmessage = (e) => {
+    if (e.data.type == "init") {
+        textures = e.data.textures;
+        texSize = textures[0].width;
+    }
+    else {
+        byteArray = new Uint8ClampedArray(e.data.width * e.data.height * 4)
+        rayCaster.CastRays(e.data.start, e.data.width, e.data.height, e.data.threads, e.data.map, e.data.player, textures, texSize, byteArray);
+        postMessage(byteArray.buffer, [byteArray.buffer]);
+    }
 }
