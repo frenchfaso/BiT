@@ -6,6 +6,7 @@ const gameStep = function (timeStamp) {
     game.render();
     window.requestAnimationFrame(gameStep);
 }
+
 game.init().then(() => {
     window.requestAnimationFrame(gameStep);
 });

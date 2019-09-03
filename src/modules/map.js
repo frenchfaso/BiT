@@ -25,12 +25,67 @@ class Map {
             [2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 2, 5, 0, 5, 0, 5, 0, 5, 0, 5],
             [2, 2, 0, 0, 0, 0, 0, 2, 2, 2, 0, 0, 0, 2, 2, 0, 5, 0, 5, 0, 0, 0, 5, 5],
             [2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 5, 5, 5, 5, 5, 5, 5, 5, 5]
-        ]
-    }
-    get map() {
-        return this.data;
+        ];
     }
 
+    getMap(w, h) {
+        this.createMaze(w, h);
+        for(let d of this.data){
+            console.log(...d);
+        }
+        return this.data;
+    }
+    createMaze(w, h) {
+        let maze = [];
+        for (let x = 0; x < w; x++) {
+            maze[x] = [];
+            for (let y = 0; y < h; y++) {
+                maze[x][y] = 0;
+                if (x == 1 | x == w - 1 | y == 1 | y == h - 1) maze[x][y] = 1;
+            }
+        }
+        maze[1][2] = 5;
+        maze[h - 1][w - 2] = 5;
+        this.createVerticalWall(maze, 1, 1, w - 1, h - 1);
+
+        for (let a of maze) {
+            a.shift();
+        }
+        maze.shift();
+        this.data = maze;
+    }
+
+    createVerticalWall(maze, x1, y1, x2, y2) {
+        let midX = (x1 + x2) / 2;
+        if (midX % 2 == 0) midX += 1;
+        let doors = (y2 - y1) / 2;
+        let door = y1 - 1 + (Math.ceil(Math.random() * doors)) * 2;
+        for (let i = y1 + 1; i < y2; i++) {
+            if (i == door) {
+                maze[midX][i] = 0;
+            } else {
+                maze[midX][i] = 1;
+            }
+        }
+        if (midX - x1 > 3) this.createHorizontalWall(maze, x1, y1, midX, y2);
+        if (x2 - midX > 3) this.createHorizontalWall(maze, midX, y1, x2, y2);
+    }
+
+    createHorizontalWall(maze, x1, y1, x2, y2) {
+        let midY = (y1 + y2) / 2;
+        if (midY % 2 == 0) midY -= 1;
+        let doors = (x2 - x1) / 2;
+        let door = x1 - 1 + (Math.ceil(Math.random() * doors)) * 2;
+        for (let i = x1 + 1; i < x2; i++) {
+            if (i == door) {
+                maze[i][midY] = 0;
+            } else {
+                maze[i][midY] = 1;
+            }
+        }
+        if (midY - y1 > 3) this.createVerticalWall(maze, x1, y1, x2, midY);
+        if (y2 - midY > 3) this.createVerticalWall(maze, x1, midY, x2, y2);
+    }
 }
 
 export { Map };

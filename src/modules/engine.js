@@ -4,11 +4,11 @@ import { Map } from "./map.js";
 class Engine {
     constructor() {
         this.updateRotation = this.updateRotation.bind(this);
-        this.res = 1;
+        this.res = 2;
         this.threads = 2;
         this.workers = [];
-        this.player = new Player();
-        this.map = new Map().map;
+        this.player = new Player(1.5,1.5);
+        this.map = new Map().getMap(16, 16);
         this.textures = [];
         this.textureAtlas = new Image();
         this.canv = document.createElement("canvas");
