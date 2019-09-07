@@ -32,18 +32,21 @@ class Map {
 
     getMap(w, h) {
         let maze = this.createMaze(w, h);
-        for (let d of maze) {
-            console.log(...d);
-        }
+        // for (let d of maze) {
+        //     console.log(...d);
+        // }
         this.path = this.aStar(maze, {x:1, y:1}, {x:w-3, y:h-3});
-        // let m = [...maze];
-        // for(let n of this.path){
-        //     m[n.x][n.y] = 8;
-        // }
-        // console.log("So..you like it the easy way.. don't you?");
-        // for(let k of m){
-        //     console.log(...k);
-        // }
+        let m = [];
+        for(let e of maze){
+            m.push([...e]);
+        }
+        for(let n of this.path){
+            m[n.x][n.y] = "#";
+        }
+        console.log("So..you like it the easy way, don't you?");
+        for(let k of m){
+            console.log(k.toString());
+        }
         return maze;
     }
     createMaze(w, h) {
