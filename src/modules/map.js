@@ -58,8 +58,8 @@ class Map {
                 if (x == 1 | x == w - 1 | y == 1 | y == h - 1) maze[x][y] = 1;
             }
         }
-        maze[1][2] = 5;
-        maze[h - 1][w - 2] = 5;
+        maze[1][2] = 4;
+        maze[h - 1][w - 2] = 3;
         this.createVerticalWall(maze, 1, 1, w - 1, h - 1);
 
         for (let a of maze) {
@@ -78,7 +78,7 @@ class Map {
             if (i == door) {
                 maze[midX][i] = 0;
             } else {
-                maze[midX][i] = 1;
+                maze[midX][i] = 2;
             }
         }
         if (midX - x1 > this.res) this.createHorizontalWall(maze, x1, y1, midX, y2);
@@ -94,7 +94,7 @@ class Map {
             if (i == door) {
                 maze[i][midY] = 0;
             } else {
-                maze[i][midY] = 1;
+                maze[i][midY] = 2;
             }
         }
         if (midY - y1 > this.res) this.createVerticalWall(maze, x1, y1, x2, midY);

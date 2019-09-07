@@ -3,12 +3,14 @@ import { Map } from "./map.js";
 
 class Engine {
     constructor() {
+        let map = new Map();
         this.updateRotation = this.updateRotation.bind(this);
         this.res = 2;
         this.threads = 2;
         this.workers = [];
-        this.player = new Player(1.5,1.5);
-        this.map = new Map().getMap(16, 16);
+        this.player = new Player(1.5, 1.5);
+        this.map = map.getMap(16, 16);
+        this.path = map.path;
         this.textures = [];
         this.textureAtlas = new Image();
         this.canv = document.createElement("canvas");
@@ -128,14 +130,16 @@ class Engine {
                 offCanv.width = 64;
                 offCanv.height = 64;
                 const ctx = offCanv.getContext("2d");
-                for (let t = 0; t < 9; t++) {
+                for (let t = 0; t < 6; t++) {
                     const x = t % 3 * 64;
                     const y = Math.floor(t / 3) * 64;
                     ctx.drawImage(this.textureAtlas, x, y, 64, 64, 0, 0, offCanv.width, offCanv.height);
                     this.textures[t] = ctx.getImageData(0, 0, offCanv.width, offCanv.height)
-                    ctx.fillStyle = "rgba(0,0,0,0.35)";
-                    ctx.fillRect(0, 0, offCanv.width, offCanv.height);
-                    this.textures[t + 9] = ctx.getImageData(0, 0, offCanv.width, offCanv.height);
+                    if (t != 4) {
+                        ctx.fillStyle = "rgba(0,0,0,0.35)";
+                        ctx.fillRect(0, 0, offCanv.width, offCanv.height);
+                    }
+                    this.textures[t + 6] = ctx.getImageData(0, 0, offCanv.width, offCanv.height);
                 }
                 for (let t = 0; t < this.threads; t++) {
                     const worker = new Worker(`./raycaster.js`);

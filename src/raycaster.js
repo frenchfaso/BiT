@@ -118,9 +118,9 @@ class RayCaster {
                     buffer[i + 3] = 255;
                 }
                 else {
-                    buffer[i] = textures[this.texNum + 9].data[texI];
-                    buffer[i + 1] = textures[this.texNum + 9].data[texI + 1];
-                    buffer[i + 2] = textures[this.texNum + 9].data[texI + 2];
+                    buffer[i] = textures[this.texNum + 6].data[texI];
+                    buffer[i + 1] = textures[this.texNum + 6].data[texI + 1];
+                    buffer[i + 2] = textures[this.texNum + 6].data[texI + 2];
                     buffer[i + 3] = 255;
                 }
             }
@@ -166,14 +166,14 @@ class RayCaster {
                 const texI = (this.floorTexX + this.floorTexY * texWidth) * 4;
 
                 //floor
-                buffer[i2] = textures[7].data[texI];
-                buffer[i2 + 1] = textures[7].data[texI + 1];
-                buffer[i2 + 2] = textures[7].data[texI + 2];
+                buffer[i2] = textures[0].data[texI];
+                buffer[i2 + 1] = textures[0].data[texI + 1];
+                buffer[i2 + 2] = textures[0].data[texI + 2];
                 buffer[i2 + 3] = 255;
                 //ceiling (symmetrical!)
-                buffer[i] = textures[16].data[texI];
-                buffer[i + 1] = textures[16].data[texI + 1];
-                buffer[i + 2] = textures[16].data[texI + 2];
+                buffer[i] = textures[6].data[texI];
+                buffer[i + 1] = textures[6].data[texI + 1];
+                buffer[i + 2] = textures[6].data[texI + 2];
                 buffer[i + 3] = 255;
             }
         }
