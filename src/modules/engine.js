@@ -150,6 +150,8 @@ class Engine {
                         this.workers[t].done = true;
                     };
                     worker.postMessage({
+                        width: this.canv.width,
+                        height: this.canv.height,
                         textures: this.textures,
                         map: this.map,
                         threads: this.threads
@@ -246,8 +248,8 @@ class Engine {
                 this.workers[i].done = false;
                 this.workers[i].worker.postMessage({
                     start: i,
-                    width: this.canv.width,
-                    height: this.canv.height,
+                    // width: this.canv.width,
+                    // height: this.canv.height,
                     player: this.player
                 });
             }
