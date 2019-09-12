@@ -10,4 +10,6 @@ The recursive maze generator algorithm is inspired by [this](https://en.wikipedi
 The A* (A-star) pathfinding algorithm is inspired by [Daniel Shiffman's P5.js version](https://www.youtube.com/watch?v=aKYlikFAV4k).  
 Btw, If you don't know Dan, check his youtube channel, lots of lovely creative programming tutorials/coding challenges.  
 
+The textures are from the ["Metal textures collection" from "Rubberduck"](https://opengameart.org/content/40-free-metal-textures-from-mtc-sets) on OpenGameArt.  
+
 It was a lot of fun working on this project, I always wanted to learn about raycasting, I fell in love with computers and 3D graphics the first time I saw and played [Wolfenstein 3D](https://en.wikipedia.org/wiki/Wolfenstein_3D). Thanks John!.
