@@ -8,11 +8,13 @@ class Engine {
         this.res = 2;
         this.threads = 2;
         this.workers = [];
-        this.player = new Player(1.5, 1.5);
+        this.player = new Player(1.9, 1.5);
         this.map = map.getMap(16, 16);
         this.path = map.path;
         this.textures = [];
+        this.texSize = 64;
         this.textureAtlas = new Image();
+        this.textureAtlas.src = "textures.webp";
         this.canv = document.createElement("canvas");
         this.canv.width = window.innerWidth / this.res;
         this.canv.height = window.innerHeight / this.res;
@@ -21,7 +23,6 @@ class Engine {
         this.ctx = this.canv.getContext("2d", { alpha: false });
         this.ctx.imageSmoothingEnabled = false;
         document.body.appendChild(this.canv);
-
         this.backBufferCanv = document.createElement("canvas");
         this.backBufferCanv.width = this.canv.width;
         this.backBufferCanv.height = this.canv.height;
@@ -66,6 +67,8 @@ class Engine {
         this.touchDY = 0;
         this.movSpeed = 0;
         this.superSpeed = 1;
+        this.playing = false;
+
         document.addEventListener('pointerlockchange', () => {
             if (document.pointerLockElement == this.canv) {
                 document.addEventListener("mousemove", this.updateRotation, false);
@@ -111,33 +114,53 @@ class Engine {
                     break;
             }
         }, false);
-        const fullscreenButton = document.getElementById("fullscreen");
-        fullscreenButton.addEventListener("click", (e) => {
-            if (this.canv.requestFullscreen) {
-                this.canv.requestFullscreen();
-            }
-        });
+
         window.addEventListener("resize", () => {
             // this.canv.width = window.innerWidth / this.res;
             // this.canv.height = window.innerHeight / this.res;
             this.ctx.imageSmoothingEnabled = false;
         });
     }
+    backAnimation() {
+        this.path.reverse();
+        let pos = 1;
+        let count = 0;
+        let id = setInterval(() => {
+            if (pos < this.path.length - 2) {
+                let x = Math.pow((1 - count), 2) * this.path[pos].x + 2 * (1 - count) * count * this.path[pos + 1].x + Math.pow(count, 2) * this.path[pos + 2].x;
+                let y = Math.pow((1 - count), 2) * this.path[pos].y + 2 * (1 - count) * count * this.path[pos + 1].y + Math.pow(count, 2) * this.path[pos + 2].y;
+                this.player.posX = x + 0.5;
+                this.player.posY = y + 0.5;
+                count += 0.04;
+                if (count >= 1) {
+                    count = 0;
+                    pos += 2;
+                }
+            }
+            else clearInterval(id);
+        }, 33)
+    }
     async init() {
         return new Promise((resolve) => {
             this.textureAtlas.addEventListener("load", async (e) => {
                 const offCanv = document.createElement("canvas");
-                offCanv.width = 64;
-                offCanv.height = 64;
+                offCanv.width = this.texSize;
+                offCanv.height = this.texSize;
+                offCanv.style.imageRendering = "pixelated"
                 const ctx = offCanv.getContext("2d");
                 for (let t = 0; t < 6; t++) {
-                    const x = t % 3 * 64;
-                    const y = Math.floor(t / 3) * 64;
-                    ctx.drawImage(this.textureAtlas, x, y, 64, 64, 0, 0, offCanv.width, offCanv.height);
-                    this.textures[t] = ctx.getImageData(0, 0, offCanv.width, offCanv.height)
+                    const x = t % 3 * this.texSize;
+                    const y = Math.floor(t / 3) * this.texSize;
+                    ctx.drawImage(this.textureAtlas, x, y, this.texSize, this.texSize, 0, 0, offCanv.width, offCanv.height);
+                    this.textures[t] = ctx.getImageData(0, 0, offCanv.width, offCanv.height);
                     if (t != 4) {
                         ctx.fillStyle = "rgba(0,0,0,0.35)";
                         ctx.fillRect(0, 0, offCanv.width, offCanv.height);
+                    }
+                    else {
+                        let dataUrl = offCanv.toDataURL();
+                        const imgExit = document.querySelector("#imgExit");
+                        imgExit.src = dataUrl;
                     }
                     this.textures[t + 6] = ctx.getImageData(0, 0, offCanv.width, offCanv.height);
                 }
@@ -171,7 +194,6 @@ class Engine {
                 }
                 resolve();
             });
-            this.textureAtlas.src = "./textures.webp";
         });
     }
     updateRotation(e) {
@@ -179,64 +201,77 @@ class Engine {
     }
     update(tFrame) {
         // update player position
-        const frameTime = (tFrame - this.oldTime) / 1000;
-        this.movSpeed = frameTime * 2 * this.superSpeed;
+        if (this.playing) {
+            const frameTime = (tFrame - this.oldTime) / 1000;
+            this.movSpeed = frameTime * 2 * this.superSpeed;
 
-        if (this.touched == true || this.player.rot != this.oldRot) {
-            let rot = 0;
-            if (this.touched) {
-                rot = this.touchDX;
-                this.movSpeed = this.touchDY / 1000;
+            if (this.touched == true || this.player.rot != this.oldRot) {
+                let rot = 0;
+                if (this.touched) {
+                    rot = this.touchDX;
+                    this.movSpeed = this.touchDY / 1000;
+                }
+                else {
+                    rot = (this.oldRot + this.player.rot) / 2;
+                }
+                this.oldRot = this.player.rot;
+                const rotSpeed = rot * frameTime * -0.1;
+                const oldDirX = this.player.dirX;
+                this.player.dirX = this.player.dirX * Math.cos(rotSpeed) - this.player.dirY * Math.sin(rotSpeed);
+                this.player.dirY = oldDirX * Math.sin(rotSpeed) + this.player.dirY * Math.cos(rotSpeed);
+                const oldPlaneX = this.player.planeX;
+                this.player.planeX = this.player.planeX * Math.cos(rotSpeed) - this.player.planeY * Math.sin(rotSpeed);
+                this.player.planeY = oldPlaneX * Math.sin(rotSpeed) + this.player.planeY * Math.cos(rotSpeed);
             }
-            else {
-                rot = (this.oldRot + this.player.rot) / 2;
+            try {
+                if (this.player.forward) {
+                    const x1 = Math.floor(this.player.posX + this.player.dirX * this.movSpeed * this.player.collision);
+                    const y1 = Math.floor(this.player.posY);
+                    if (this.map[x1][y1] == 0) this.player.posX += this.player.dirX * this.movSpeed;
+                    const x2 = Math.floor(this.player.posX);
+                    const y2 = Math.floor(this.player.posY + this.player.dirY * this.movSpeed * this.player.collision);
+                    if (this.map[x2][y2] == 0) this.player.posY += this.player.dirY * this.movSpeed;
+                }
+                if (this.player.right) {
+                    const dx = (this.player.dirX * Math.cos(Math.PI / 2) - this.player.dirY * Math.sin(Math.PI / 2)) * this.movSpeed;
+                    const x1 = Math.floor(this.player.posX - dx * this.player.collision);
+                    const y1 = Math.floor(this.player.posY);
+                    if (this.map[x1][y1] == 0) this.player.posX -= dx;
+                    const dy = (this.player.dirX * Math.sin(Math.PI / 2) + this.player.dirY * Math.cos(Math.PI / 2)) * this.movSpeed;
+                    const x2 = Math.floor(this.player.posX);
+                    const y2 = Math.floor(this.player.posY - dy * this.player.collision);
+                    if (this.map[x2][y2] == 0) this.player.posY -= dy;
+                }
+                if (this.player.left) {
+                    const dx = (this.player.dirX * Math.cos(-Math.PI / 2) - this.player.dirY * Math.sin(-Math.PI / 2)) * this.movSpeed;
+                    const x1 = Math.floor(this.player.posX - dx * this.player.collision);
+                    const y1 = Math.floor(this.player.posY);
+                    if (this.map[x1][y1] == 0) this.player.posX -= dx;
+                    const dy = (this.player.dirX * Math.sin(-Math.PI / 2) + this.player.dirY * Math.cos(-Math.PI / 2)) * this.movSpeed;
+                    const x2 = Math.floor(this.player.posX);
+                    const y2 = Math.floor(this.player.posY - dy * this.player.collision);
+                    if (this.map[x2][y2] == 0) this.player.posY -= dy;
+                }
+                if (this.player.backward) {
+                    const x1 = Math.floor(this.player.posX - this.player.dirX * this.movSpeed * this.player.collision);
+                    const y1 = Math.floor(this.player.posY);
+                    if (this.map[x1][y1] == 0) this.player.posX -= this.player.dirX * this.movSpeed;
+                    const x2 = Math.floor(this.player.posX);
+                    const y2 = Math.floor(this.player.posY - this.player.dirY * this.movSpeed * this.player.collision);
+                    if (this.map[x2][y2] == 0) this.player.posY -= this.player.dirY * this.movSpeed;
+                }
             }
-            this.oldRot = this.player.rot;
-            const rotSpeed = rot * frameTime * -0.1;
-            const oldDirX = this.player.dirX;
-            this.player.dirX = this.player.dirX * Math.cos(rotSpeed) - this.player.dirY * Math.sin(rotSpeed);
-            this.player.dirY = oldDirX * Math.sin(rotSpeed) + this.player.dirY * Math.cos(rotSpeed);
-            const oldPlaneX = this.player.planeX;
-            this.player.planeX = this.player.planeX * Math.cos(rotSpeed) - this.player.planeY * Math.sin(rotSpeed);
-            this.player.planeY = oldPlaneX * Math.sin(rotSpeed) + this.player.planeY * Math.cos(rotSpeed);
+            catch(e){
+                ;
+            }
+            this.oldTime = tFrame;
+            if (this.player.posX < 1.49 && (this.player.posY > 1 && this.player.posY < 2)) {
+                const win = document.querySelector("#win");
+                win.style.display = "flex"
+                document.exitPointerLock();
+                this.playing = false;
+            }
         }
-        if (this.player.forward) {
-            const x1 = Math.floor(this.player.posX + this.player.dirX * this.movSpeed * this.player.collision);
-            const y1 = Math.floor(this.player.posY);
-            if (this.map[x1][y1] == 0) this.player.posX += this.player.dirX * this.movSpeed;
-            const x2 = Math.floor(this.player.posX);
-            const y2 = Math.floor(this.player.posY + this.player.dirY * this.movSpeed * this.player.collision);
-            if (this.map[x2][y2] == 0) this.player.posY += this.player.dirY * this.movSpeed;
-        }
-        if (this.player.right) {
-            const dx = (this.player.dirX * Math.cos(Math.PI / 2) - this.player.dirY * Math.sin(Math.PI / 2)) * this.movSpeed;
-            const x1 = Math.floor(this.player.posX - dx * this.player.collision);
-            const y1 = Math.floor(this.player.posY);
-            if (this.map[x1][y1] == 0) this.player.posX -= dx;
-            const dy = (this.player.dirX * Math.sin(Math.PI / 2) + this.player.dirY * Math.cos(Math.PI / 2)) * this.movSpeed;
-            const x2 = Math.floor(this.player.posX);
-            const y2 = Math.floor(this.player.posY - dy * this.player.collision);
-            if (this.map[x2][y2] == 0) this.player.posY -= dy;
-        }
-        if (this.player.left) {
-            const dx = (this.player.dirX * Math.cos(-Math.PI / 2) - this.player.dirY * Math.sin(-Math.PI / 2)) * this.movSpeed;
-            const x1 = Math.floor(this.player.posX - dx * this.player.collision);
-            const y1 = Math.floor(this.player.posY);
-            if (this.map[x1][y1] == 0) this.player.posX -= dx;
-            const dy = (this.player.dirX * Math.sin(-Math.PI / 2) + this.player.dirY * Math.cos(-Math.PI / 2)) * this.movSpeed;
-            const x2 = Math.floor(this.player.posX);
-            const y2 = Math.floor(this.player.posY - dy * this.player.collision);
-            if (this.map[x2][y2] == 0) this.player.posY -= dy;
-        }
-        if (this.player.backward) {
-            const x1 = Math.floor(this.player.posX - this.player.dirX * this.movSpeed * this.player.collision);
-            const y1 = Math.floor(this.player.posY);
-            if (this.map[x1][y1] == 0) this.player.posX -= this.player.dirX * this.movSpeed;
-            const x2 = Math.floor(this.player.posX);
-            const y2 = Math.floor(this.player.posY - this.player.dirY * this.movSpeed * this.player.collision);
-            if (this.map[x2][y2] == 0) this.player.posY -= this.player.dirY * this.movSpeed;
-        }
-        this.oldTime = tFrame;
     }
     render() {
         let count = this.workers.filter((el) => {
@@ -248,8 +283,6 @@ class Engine {
                 this.workers[i].done = false;
                 this.workers[i].worker.postMessage({
                     start: i,
-                    // width: this.canv.width,
-                    // height: this.canv.height,
                     player: this.player
                 });
             }

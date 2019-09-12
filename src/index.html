@@ -10,13 +10,48 @@
       overflow: hidden;
       overscroll-behavior-y: contain;
     }
-    canvas{
+
+    canvas {
       image-rendering: pixelated;
     }
-    #fullscreen {
+
+    p {
+      text-align: center;
+    }
+
+    img {
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+
+    #loose {
+      display: none;
+    }
+
+    #win {
+      display: none;
+    }
+
+    .screens {
       position: absolute;
+      width: 100vw;
+      height: 100vh;
+      background: rgb(37, 44, 44);
+      opacity: 0.9;
+      font-size: 17pt;
+      font-family: Arial, Helvetica, sans-serif;
+      font-weight: bold;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #timer {
       top: 10pt;
-      right: 10pt;
+      left: 10pt;
+      position: absolute;
       border-radius: 50%;
       width: 35pt;
       height: 35pt;
@@ -24,24 +59,45 @@
       background-color: white;
       opacity: 0.5;
       font-family: Arial, Helvetica, sans-serif;
-      font-size: 17pt;
-      font-weight: bold;
       user-select: none;
       display: flex;
       justify-content: center;
       align-items: center;
-    }
-    #fullscreen-icon{
-      margin-top: -4pt;
     }
   </style>
 </head>
 
 <body>
   <script type="module" src="./app.js"></script>
-  <div id="fullscreen">
-    <span id="fullscreen-icon">[ ]</span>
+
+  <div id="timer">
+    <span id="timer-sec">60</span>
   </div>
+
+  <div id="start" class="screens">
+    <h1>BiT</h1>
+    <p>Back in Time<br>
+      webworkers powered raycasting recursive maze generator
+    </p>
+    <h2>
+      Find the exit, you have 60 seconds.
+    </h2>
+    <img id="imgExit" />
+    <p>
+      WASD for moving forward/backward and strafing left/right<br>
+      move mouse to look around
+    </p>
+    <button id="btnStart">Let's do it!</button>
+  </div>
+  <div id="loose" class="screens">
+    <h1>You are lost..</h1>
+    <button id="btnRetry">Retry</button>
+  </div>
+  <div id="win" class="screens">
+    <h1>You made it!</h1>
+    <button id="btnReload">Reload</button>
+  </div>
+
 </body>
 
 </html>

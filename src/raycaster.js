@@ -28,8 +28,6 @@ class RayCaster {
         this.currentDist;
         this.floorTexX = 0;
         this.floorTexY = 0;
-        // this.floorTex = { max: 0, min: 0 };
-        // this.arr = [];
     }
 
     CastRays(start, width, height, threads, map, player, textures, texWidth, buffer) {
@@ -131,7 +129,7 @@ class RayCaster {
             this.distWall = this.perpWallDist;
             this.distPlayer = 0.0;
 
-            if (this.drawEnd < 0) this.drawEnd = height; //becomes < 0 when the integer overflows
+            if (this.drawEnd < 0) this.drawEnd = height;
 
             //draw the floor from drawEnd to the bottom of the screen
             for (let y = this.drawEnd; y < height; y++) {
@@ -163,10 +161,9 @@ class RayCaster {
 
             // draw the walls
             for (let y = this.drawStart; y < this.drawEnd + 1; y++) {
-                // this.texY = Math.floor((y * 256 - height * 128 + this.lineHeight * 128) * texWidth / this.lineHeight / 256);
                 this.texY = Math.floor((y - height / 2 + this.lineHeight / 2) * texWidth / this.lineHeight);
                 if (this.texY < 0) this.texY = 0;
-                else if (this.texY > 63) this.texY = 63;
+                else if (this.texY > texWidth-1) this.texY = texWidth-1;
                 const i = (x + y * width) * 4;
                 const texI = (this.texX + this.texY * texWidth) * 4;
                 if (this.side == 1) {
@@ -181,21 +178,8 @@ class RayCaster {
                     buffer[i + 2] = textures[this.texNum + 6].data[texI + 2];
                     buffer[i + 3] = 255;
                 }
-
-                // this.arr.push(this.texX);
-                // this.arr.push(this.texY);
             }
         }
-        // if (this.arr.length > 0) {
-        //     this.floorTex = {
-        //         max: this.arr.reduce((a, b) => {
-        //             return Math.max(a, b);
-        //         }),
-        //         min: this.arr.reduce((a, b) => {
-        //             return Math.min(a, b);
-        //         })
-        //     };
-        // }
     }
 }
 
@@ -220,7 +204,6 @@ let workerInit = function (e) {
         byteArray = new Uint8ClampedArray(width * height * 4)
         rayCaster.CastRays(e.data.start, width, height, threads, map, e.data.player, textures, texSize, byteArray);
         postMessage(byteArray.buffer, [byteArray.buffer]);
-        // console.log(rayCaster.floorTex);
     });
 }
 addEventListener("message", workerInit);
