@@ -1,5 +1,7 @@
 # BiT
-BiT (Back in Time) - a compact multithreaded (webworkers) raycasting recursive maze generator/game developed for JS13k 2019
+BiT (Back in Time) - a compact multithreaded (webworkers) raycasting recursive maze generator/game developed for JS13k 2019  
+
+![BiT screenshot](/screenshots/BiT_highres.jpg?raw=true)  
 
 The raycasting engine is inspired by the excelent [Lode's raycaster tutorial series](https://lodev.org/cgtutor/raycasting.html), adapted to work on the web platform.  
 It uses webworkers to share the work on multiple cores:  
