@@ -16,4 +16,4 @@ Btw, If you don't know Dan, check out his youtube channel: it’s packed with lo
 
 The textures are from OpenGameArt: ["Metal textures collection" from "Rubberduck"](https://opengameart.org/content/40-free-metal-textures-from-mtc-sets).  
 
-It was a lot of fun working on this project. I always wanted to learn about raycasting: I fell in love with computers and 3D graphics the first time I saw and played [Wolfenstein 3D](https://en.wikipedia.org/wiki/Wolfenstein_3D) with my buddy. Thanks John!.
+It was a lot of fun working on this project. I always wanted to learn about raycasting: I fell in love with computers and 3D graphics the first time I saw and played [Wolfenstein 3D](https://en.wikipedia.org/wiki/Wolfenstein_3D) with my buddy [Toni](https://github.com/zgypa). Thanks John!.
