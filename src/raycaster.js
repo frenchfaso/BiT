@@ -28,7 +28,16 @@ class RayCaster {
         this.currentDist;
         this.floorTexX = 0;
         this.floorTexY = 0;
+        this.wallLight = 1;
+        this.floorLight = 1;
+        this.pow = -2;
+        this.lightMin;
+        this.lightMax;
     }
+    Map(n, start1, stop1, start2, stop2) {
+        let newval = (n - start1) / (stop1 - start1) * (stop2 - start2) + start2;
+        return newval;
+    };
 
     CastRays(start, width, height, threads, map, player, textures, texWidth, buffer) {
         for (let x = start; x < width; x += threads) {
@@ -131,9 +140,14 @@ class RayCaster {
 
             if (this.drawEnd < 0) this.drawEnd = height;
 
+            this.wallLight = this.Map(Math.pow(this.drawEnd, this.pow), this.lightMin, this.lightMax, 0, 1);
+
             //draw the floor from drawEnd to the bottom of the screen
             for (let y = this.drawEnd; y < height; y++) {
-                this.currentDist = height / (2.0 * y - height); //you could make a small lookup table for this instead
+
+                this.floorLight = this.Map(Math.pow(y, this.pow), this.lightMin, this.lightMax, 0, 1);
+
+                this.currentDist = height / (2.0 * y - height);
 
                 let weight = (this.currentDist - this.distPlayer) / (this.distWall - this.distPlayer);
 
@@ -148,14 +162,14 @@ class RayCaster {
                 const texI = (this.floorTexX + this.floorTexY * texWidth) * 4;
 
                 //floor
-                buffer[i] = textures[6].data[texI];
-                buffer[i + 1] = textures[6].data[texI + 1];
-                buffer[i + 2] = textures[6].data[texI + 2];
+                buffer[i] = Math.floor(textures[6].data[texI] * this.floorLight);
+                buffer[i + 1] = Math.floor(textures[6].data[texI + 1] * this.floorLight);
+                buffer[i + 2] = Math.floor(textures[6].data[texI + 2] * this.floorLight);
                 buffer[i + 3] = 255;
                 //ceiling (symmetrical!)
-                buffer[i2] = textures[0].data[texI];
-                buffer[i2 + 1] = textures[0].data[texI + 1];
-                buffer[i2 + 2] = textures[0].data[texI + 2];
+                buffer[i2] = Math.floor(textures[0].data[texI] * this.floorLight);
+                buffer[i2 + 1] = Math.floor(textures[0].data[texI + 1] * this.floorLight);
+                buffer[i2 + 2] = Math.floor(textures[0].data[texI + 2] * this.floorLight);
                 buffer[i2 + 3] = 255;
             }
 
@@ -163,19 +177,20 @@ class RayCaster {
             for (let y = this.drawStart; y < this.drawEnd + 1; y++) {
                 this.texY = Math.floor((y - height / 2 + this.lineHeight / 2) * texWidth / this.lineHeight);
                 if (this.texY < 0) this.texY = 0;
-                else if (this.texY > texWidth-1) this.texY = texWidth-1;
+                else if (this.texY > texWidth - 1) this.texY = texWidth - 1;
                 const i = (x + y * width) * 4;
                 const texI = (this.texX + this.texY * texWidth) * 4;
+
                 if (this.side == 1) {
-                    buffer[i] = textures[this.texNum].data[texI];
-                    buffer[i + 1] = textures[this.texNum].data[texI + 1];
-                    buffer[i + 2] = textures[this.texNum].data[texI + 2];
+                    buffer[i] = Math.floor(textures[this.texNum].data[texI] * this.wallLight);
+                    buffer[i + 1] = Math.floor(textures[this.texNum].data[texI + 1] * this.wallLight);
+                    buffer[i + 2] = Math.floor(textures[this.texNum].data[texI + 2] * this.wallLight);
                     buffer[i + 3] = 255;
                 }
                 else {
-                    buffer[i] = textures[this.texNum + 6].data[texI];
-                    buffer[i + 1] = textures[this.texNum + 6].data[texI + 1];
-                    buffer[i + 2] = textures[this.texNum + 6].data[texI + 2];
+                    buffer[i] = Math.floor(textures[this.texNum + 6].data[texI] * this.wallLight);
+                    buffer[i + 1] = Math.floor(textures[this.texNum + 6].data[texI + 1] * this.wallLight);
+                    buffer[i + 2] = Math.floor(textures[this.texNum + 6].data[texI + 2] * this.wallLight);
                     buffer[i + 3] = 255;
                 }
             }
@@ -199,6 +214,8 @@ let workerInit = function (e) {
     texSize = textures[0].width;
     threads = e.data.threads;
     map = e.data.map;
+    rayCaster.lightMin = Math.pow(height / 2, rayCaster.pow);
+    rayCaster.lightMax = Math.pow(height, rayCaster.pow);
     removeEventListener("message", workerInit);
     addEventListener("message", (e) => {
         byteArray = new Uint8ClampedArray(width * height * 4)

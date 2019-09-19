@@ -2,7 +2,7 @@
 
 import { Engine } from "./modules/engine.js";
 
-const game = new Engine();
+window.game = new Engine();
 const gameStep = function (timeStamp) {
     game.update(timeStamp);
     game.render();

@@ -5,7 +5,7 @@ class Engine {
     constructor() {
         let map = new Map();
         this.updateRotation = this.updateRotation.bind(this);
-        this.res = 2;
+        this.res = 1;
         this.threads = 2;
         this.workers = [];
         this.player = new Player(1.9, 1.5);
