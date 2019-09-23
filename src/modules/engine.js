@@ -5,8 +5,8 @@ class Engine {
     constructor() {
         let map = new Map();
         this.updateRotation = this.updateRotation.bind(this);
-        this.res = 1;
-        this.threads = 2;
+        this.res = 2;
+        this.threads = 1;
         this.workers = [];
         this.player = new Player(1.9, 1.5);
         this.map = map.getMap(16, 16);
@@ -18,17 +18,36 @@ class Engine {
         this.canv = document.createElement("canvas");
         this.canv.width = window.innerWidth / this.res;
         this.canv.height = window.innerHeight / this.res;
+        this.canv.style.imageRendering = "pixelated";
         this.canv.style.imageRendering = "crisp-edges";
-        this.canv.style.width = "100vw";
+        this.canv.style.width = "60vw";
         this.ctx = this.canv.getContext("2d", { alpha: false });
         this.ctx.imageSmoothingEnabled = false;
-        document.body.appendChild(this.canv);
         this.backBufferCanv = document.createElement("canvas");
         this.backBufferCanv.width = this.canv.width;
         this.backBufferCanv.height = this.canv.height;
-        this.backBufferCanv.style.imageRendering = "pixelated";
+        this.backBufferCanv.style.imageRendering = "crisp-edges";
         this.backBufferCtx = this.backBufferCanv.getContext("2d", { alpha: false });
-        this.backBufferCtx.imageSmoothingEnabled = false;
+        this.backBufferCtx.imageSmoothingEnabled = true;
+
+        // this.colorBufferCanv = new OffscreenCanvas(this.canv.width, this.canv.height);
+        this.colorBufferCanv = document.createElement("canvas");
+        this.colorBufferCanv.width = this.canv.width;
+        this.colorBufferCanv.height = this.canv.height;
+        this.colorBufferCanv.style.width = "30vw";
+        document.body.appendChild(this.colorBufferCanv);
+        this.colorBufferCtx = this.colorBufferCanv.getContext("2d", { alpha: false });
+        // this.lightBufferCanv = new OffscreenCanvas(this.canv.width / 2, this.canv.height / 2);
+        this.lightBufferCanv = document.createElement("canvas");
+        this.lightBufferCanv.width = this.canv.width / 2;
+        this.lightBufferCanv.height = this.canv.height / 2;
+        this.lightBufferCanv.style.width = "30vw";
+        this.lightBufferCtx = this.lightBufferCanv.getContext("2d", { alpha: false });
+        this.lightBufferCtx.filter = "blur(1px)";
+        document.body.appendChild(this.lightBufferCanv);
+
+        document.body.appendChild(this.canv);
+
         this.canv.addEventListener("touchend", (e) => {
             this.touched = false;
             this.oldTouchDX = 0;
@@ -148,29 +167,33 @@ class Engine {
                 offCanv.height = this.texSize;
                 offCanv.style.imageRendering = "pixelated"
                 const ctx = offCanv.getContext("2d");
-                for (let t = 0; t < 6; t++) {
+                for (let t = 0; t < 5; t++) {
                     const x = t % 3 * this.texSize;
                     const y = Math.floor(t / 3) * this.texSize;
                     ctx.drawImage(this.textureAtlas, x, y, this.texSize, this.texSize, 0, 0, offCanv.width, offCanv.height);
                     this.textures[t] = ctx.getImageData(0, 0, offCanv.width, offCanv.height);
-                    if (t != 4) {
-                        ctx.fillStyle = "rgba(0,0,0,0.35)";
-                        ctx.fillRect(0, 0, offCanv.width, offCanv.height);
-                    }
-                    else {
+                    // if (t != 4) {
+                    //     ctx.fillStyle = "rgba(0,0,0,0.35)";
+                    //     ctx.fillRect(0, 0, offCanv.width, offCanv.height);
+                    // }
+                    if (t === 4) {
                         let dataUrl = offCanv.toDataURL();
                         const imgExit = document.querySelector("#imgExit");
                         imgExit.src = dataUrl;
                     }
-                    this.textures[t + 6] = ctx.getImageData(0, 0, offCanv.width, offCanv.height);
+                    // this.textures[t + 6] = ctx.getImageData(0, 0, offCanv.width, offCanv.height);
                 }
                 for (let t = 0; t < this.threads; t++) {
                     const worker = new Worker(`./raycaster.js`);
                     worker.onmessage = (e) => {
                         const imgData = new ImageData(new Uint8ClampedArray(e.data), this.canv.width, this.canv.height);
-                        this.workers[t].ctx.putImageData(imgData, 0, 0);
-                        this.backBufferCtx.drawImage(this.workers[t].canv, 0, 0);
-                        this.workers[t].done = true;
+                        // this.workers[t].ctx.putImageData(imgData, 0, 0);
+                        createImageBitmap(imgData).then(bmp => {
+                            this.colorBufferCtx.drawImage(bmp, 0, 0);
+                            this.workers[t].done = true;
+                        });
+                        // this.colorBufferCtx.drawImage(this.workers[t].canv, 0, 0);
+                        // this.workers[t].done = true;
                     };
                     worker.postMessage({
                         width: this.canv.width,
@@ -179,19 +202,38 @@ class Engine {
                         map: this.map,
                         threads: this.threads
                     });
-                    const canv = document.createElement("canvas");
-                    canv.width = this.canv.width;
-                    canv.height = this.canv.height;
-                    canv.style.imageRendering = "pixelated";
-                    const ctx = canv.getContext("2d", { alpha: true });
-                    ctx.imageSmoothingEnabled = false;
+                    // const canv = document.createElement("canvas");
+                    // canv.width = this.canv.width;
+                    // canv.height = this.canv.height;
+                    // canv.style.imageRendering = "pixelated";
+                    // const ctx = canv.getContext("2d", { alpha: true });
+                    // ctx.imageSmoothingEnabled = false;
                     this.workers[t] = {
                         worker: worker,
-                        canv: canv,
-                        ctx: ctx,
+                        // canv: canv,
+                        // ctx: ctx,
                         done: true
                     };
                 }
+                const lightBufferWorker = new Worker("./lightBuffer.js");
+                lightBufferWorker.onmessage = (e) => {
+                    const imgData = new ImageData(new Uint8ClampedArray(e.data), this.lightBufferCanv.width, this.lightBufferCanv.height);
+                    // const imgData = new Blob([new Uint8ClampedArray(e.data)]);
+                    createImageBitmap(imgData).then(bmp => {
+                        this.lightBufferCtx.drawImage(bmp, 0, 0);
+                        this.workers[this.workers.length - 1].done = true;
+                    });
+
+                };
+                lightBufferWorker.postMessage({
+                    width: this.lightBufferCanv.width,
+                    height: this.lightBufferCanv.height,
+                    map: this.map
+                });
+                this.workers.push({
+                    worker: lightBufferWorker,
+                    done: true
+                })
                 resolve();
             });
         });
@@ -261,7 +303,7 @@ class Engine {
                     if (this.map[x2][y2] == 0) this.player.posY -= this.player.dirY * this.movSpeed;
                 }
             }
-            catch(e){
+            catch (e) {
                 ;
             }
             this.oldTime = tFrame;
@@ -277,7 +319,11 @@ class Engine {
         let count = this.workers.filter((el) => {
             return el.done == true;
         }).length;
-        if (count == this.threads) {
+        if (count == this.threads + 1) {
+            this.backBufferCtx.drawImage(this.colorBufferCanv, 0, 0);
+            this.backBufferCtx.globalCompositeOperation = "multiply";
+            this.backBufferCtx.drawImage(this.lightBufferCanv, 0, 0, this.canv.width, this.canv.height);
+            this.backBufferCtx.globalCompositeOperation = "copy";
             this.ctx.drawImage(this.backBufferCanv, 0, 0);
             for (let i = 0; i < this.workers.length; i++) {
                 this.workers[i].done = false;

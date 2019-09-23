@@ -17,22 +17,22 @@ btnStart.onclick = (e) => {
     const divStart = document.querySelector("#start");
     divStart.style.display = "none";
     game.playing = true;
-    game.backAnimation();
-    let sec = 60;
-    let id = setInterval(() => {
-        const timerSpan = document.querySelector("#timer-sec");
-        if (sec > 0) {
-            timerSpan.textContent = sec.toString();
-            sec--;
-        }
-        else {
-            clearInterval(id);
-            const loose = document.querySelector("#loose");
-            loose.style.display = "flex"
-            document.exitPointerLock();
-            game.playing = false;
-        }
-    }, 1000);
+    // game.backAnimation();
+    // let sec = 60;
+    // let id = setInterval(() => {
+    //     const timerSpan = document.querySelector("#timer-sec");
+    //     if (sec > 0) {
+    //         timerSpan.textContent = sec.toString();
+    //         sec--;
+    //     }
+    //     else {
+    //         clearInterval(id);
+    //         const loose = document.querySelector("#loose");
+    //         loose.style.display = "flex"
+    //         document.exitPointerLock();
+    //         game.playing = false;
+    //     }
+    // }, 1000);
 
 };
 const btnRetry = document.querySelector("#btnRetry");
