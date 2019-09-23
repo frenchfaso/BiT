@@ -5,6 +5,13 @@ BiT (Back in Time) - a compact multithreaded raycasting recursive maze generator
 
 [Play BiT](https://js13kgames.com/entries/bit-back-in-time)
 
+# Updates since JS13k
+* moved to deferred rendering (2 passes + final mixing)
+* added simple lighting based on distance and wall angle
+* added super simple/fake ambient occlusion
+
+![Deferred rendering screenshot](/screenshots/BiT_deferred.jpg)
+
 This raycasting engine is inspired by the excellent [Lode's raycaster tutorial series](https://lodev.org/cgtutor/raycasting.html), and has been adapted to work on the web platform.  
 It uses webworkers to spread the work on multiple cores:  
 the main thread manages the gameloop (input, gamelogic), orchestrates 2 webworkers (each rendering 1 partial frame) and fuses them on the "frontbuffer" when ready. The number of threads is a variable, so you can play BiT @ 4K and 64 threads on an AMD Threadripper ( :-D this should work...).  
