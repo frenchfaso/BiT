@@ -3,7 +3,7 @@ BiT (Back in Time) - a compact multithreaded raycasting recursive maze generator
 
 ![BiT screenshot](/screenshots/BiT_highres.jpg?raw=true)  
 
-[Play BiT](https://js13kgames.com/entries/bit-back-in-time)
+[Play BiT](https://js13kgames.com/entries/bit-back-in-time)(original JS13k version)
 
 # Updates since JS13k
 * moved to deferred rendering (2 passes + final mixing)
